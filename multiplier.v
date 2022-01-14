@@ -50,7 +50,7 @@ module multiplier (input             clk, rst,
                 // previous clock cycle and C is ready to use in this clock cycle
                 // to update the product register.
                 A <= product[1] ? C >> 1 : (product[0] ? C >> 1 : 32'b0);
-              	B <= product[1] ? SrcBE  : 32'b0;     
+              	B <= product[1] ? SrcBE  : (product[0] ? SrcBE : 32'b0);     
 
                 // If the product's LSB is 1, then we need to update the left-half
                 // of the product register with the pre-computed sum from C. But if
