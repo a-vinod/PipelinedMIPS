@@ -1,7 +1,7 @@
 module execute (input 			  clk, rst,
                	input      [1:0]  forwardAE, forwardBE,
-                input      [31:0] rd1, rd2, ALUOutM, ResultW,
-                input             RegWriteE, MemToRegE, jumpE,
+                input      [31:0] rd1, rd2, ALUOutM, ResultW, PCPlus4E,
+                input             RegWriteE, jumpE,
                 input      [1:0]  MemWriteE, ALUSrcE,
                 input      [2:0]  ALUControlE,
                 input			  RegDstE,	
@@ -12,12 +12,12 @@ module execute (input 			  clk, rst,
                                   MultComplete,
                 output reg [1:0]  MemWriteM,
                 output reg [4:0]  WriteRegE,
-                output reg [31:0] WriteDataE, ALUOutE
+                output reg [31:0] WriteDataE, ALUOutE, PCPlus4M
               );
     // Downstream pipeline control flags
     assign RegWriteM = RegWriteE;
-    assign MemToRegM = MemToRegE;
     assign MemWriteM = MemWriteE;
+    assign PCPlus4M  = PCPlus4E; 
     assign jumpM     = jumpE;
 
     assign WriteRegE  = RegDstE      ? (RdE) : (RtE);
@@ -35,14 +35,13 @@ module execute (input 			  clk, rst,
     assign ALU_b     = MultStartE   ? ALU_b_mult : SrcBE;
     wire [31:0] ALU_a_mult, ALU_b_mult, multOutHi, multOutLo;
 
-    // Instantiate ALU and multiplier
+    // Instantiate and wire together ALU and multiplier
     ALU alu(.a(ALU_a), .b(ALU_b), .f(ALUControlE), .y(ALUOut), .zero(zero));
 
     multiplier m(.clk(clk),       .rst(rst),          .SrcAE(SrcAE),   
                  .SrcBE(SrcBE),   .MultE(MultStartE), .ALUOut(ALUOut), 
                  .ALU_zero(zero), .ALU_A(ALU_a_mult), .ALU_B(ALU_b_mult), 
                  .hi(multOutHi),  .lo(multOutLo),     .completed(MultComplete));
-
 
   	assign ALUOutE = MemWriteE[1] ? (MemWriteE[0] ? multOutHi : multOutLo) : ALUOut;
     
