@@ -15,7 +15,6 @@ module multiplier (input             clk, rst,
   	assign ALU_A = A;
   	assign ALU_B = B;
   	assign C = ALUOut;
-  
 
   	always @ (posedge clk or posedge rst) begin
         if (rst) begin
