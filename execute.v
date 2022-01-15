@@ -2,12 +2,12 @@ module execute (input 			  clk, rst,
                	input      [1:0]  forwardAE, forwardBE,
                 input      [31:0] rd1, rd2, ALUOutM, ResultW,
                 input             RegWriteE, MemToRegE, jumpE,
-                input      [1:0]  MemWriteE,
+                input      [1:0]  MemWriteE, ALUSrcE,
                 input      [2:0]  ALUControlE,
-                input			  ALUSrcE, RegDstE,	
+                input			  RegDstE,	
                                   RsE, RtE, RdE,
                                   MultStartE, MultSgnE,
-                input      [15:0] SignImmE,
+                input      [15:0] SignImmE, UnsignedImmE,
                 output reg        RegWriteM, MemToRegM, jumpM,
                                   MultComplete,
                 output reg [1:0]  MemWriteM,
@@ -26,9 +26,9 @@ module execute (input 			  clk, rst,
     // SrcA and SrcB selection for ALU/multiplier
     wire [31:0] SrcAE, SrcBE, SrcBE_tmp, ALU_a, ALU_b, ALUOut;
     wire zero;
-    assign SrcAE     = forwardAE[1] ? (ALUOutM)  : (forwardAE[0] ? (ResultW) : (rd1));
-    assign SrcBE_tmp = forwardBE[1] ? (ALUOutM)  : (forwardBE[0] ? (ResultW) : (rd2));
-    assign SrcBE     = ALUSrcE      ? (SignImmE) : (SrcBE_tmp);
+    assign SrcAE     = forwardAE[1] ? (ALUOutM)      : (forwardAE[0] ? (ResultW)   : (rd1));
+    assign SrcBE_tmp = forwardBE[1] ? (ALUOutM)      : (forwardBE[0] ? (ResultW)   : (rd2));
+  	assign SrcBE     = ALUSrcE[1]   ? (UnsignedImmE) : (ALUSrcE[1]   ? (SignImmE) : (SrcBE_tmp));
 
     // MUX to select ALU inputs from multiplier or from register
     assign ALU_a     = MultStartE   ? ALU_a_mult : SrcAE;

@@ -5,16 +5,16 @@ module execute_tb;
     reg      [1:0]  forwardAE, forwardBE;
     reg      [31:0] rd1, rd2, ALUOutM, ResultW;
     reg             RegWriteE, MemToRegE, jumpE;
-    reg      [1:0]  MemWriteE;
+    reg      [1:0]  MemWriteE, ALUSrcE;
     reg      [2:0]  ALUControlE;
-    reg      [15:0] SignImmE;
-    reg			    ALUSrcE, RegDstE, RsE, RtE, RdE, MultStartE, MultSgnE;
+  	reg      [15:0] SignImmE, UnsignedImmE;
+    reg			    RegDstE, RsE, RtE, RdE, MultStartE, MultSgnE;
     wire            RegWriteM, MemToRegM, jumpM, MultComplete;
     wire     [1:0]  MemWriteM;
     wire     [4:0]  WriteRegE;
     wire     [31:0] WriteDataE, ALUOutE;
 
-    execute dut(clk, rst,forwardAE, forwardBE,rd1, rd2, ALUOutM, ResultW,RegWriteE, MemToRegE, jumpE,MemWriteE,ALUControlE,ALUSrcE, RegDstE,RsE, RtE, RdE,MultStartE, MultSgnE,SignImmE,RegWriteM, MemToRegM, jumpM,MultComplete,MemWriteM,WriteRegE,WriteDataE, ALUOutE);
+    execute dut(clk, rst,forwardAE, forwardBE,rd1, rd2, ALUOutM, ResultW,RegWriteE, MemToRegE, jumpE,MemWriteE,ALUSrcE,ALUControlE, RegDstE,RsE, RtE, RdE,MultStartE, MultSgnE,SignImmE,UnsignedImmE, RegWriteM,MemToRegM,jumpM,MultComplete,MemWriteM,WriteRegE,WriteDataE, ALUOutE);
 
     integer i;
     initial begin
@@ -29,9 +29,9 @@ module execute_tb;
         RegWriteE = 0;
         MemToRegE = 0;
         jumpE = 0;
-        MemWriteE = 2'b11;
+        MemWriteE = 2'b10;
         ALUControlE = 3'b010;
-        ALUSrcE = 0;
+        ALUSrcE = 00;
         RegDstE = 0;
         RsE = 32'b111;
         RtE = 32'b101;
