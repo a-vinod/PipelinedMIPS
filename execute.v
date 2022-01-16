@@ -14,6 +14,7 @@ module execute (input 			  clk, rst,
                 output reg [4:0]  WriteRegE,
                 output reg [31:0] WriteDataE, ALUOutE, PCPlus4M
               );
+    
     // Downstream pipeline control flags
     assign RegWriteM = RegWriteE;
     assign MemWriteM = MemWriteE;

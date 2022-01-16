@@ -2,9 +2,9 @@ module execute(input             clk, rst,
                // DECODE STAGE
                // Downstream control flags
                input			 MultStartD, MultSgnD, RegWriteD, MemWriteD,
-                                 BranchD, ALUSrcD, RegDstD, jumpD,
-               input      [1:0]  MemtoRegD, // WBSrc
-               input      [2:0]  ALUControlE,
+                                 BranchD, RegDstD, jumpD,
+               input      [1:0]  ALUSrcD, MemtoRegD, // WBSrc
+               input      [2:0]  ALUControlD,
                // Data
                input      [4:0]  RsD, RtD, RdD,
                input      [31:0] rd1D, rd2D, SignImmD, 
@@ -25,23 +25,23 @@ module execute(input             clk, rst,
                input      [31:0] ResultW,
 
                // HAZARD UNIT
-               input             FlushE, ForwardAE, ForwardBE, RsE, RtE,
-               output reg        MultStartE, RegWriteE, MemtoRegE, MultDoneE
-               output reg [4:0]  RsE, RtE
-               );
+               input             FlushE,
+               input      [1:0]  ForwardAE, ForwardBE,
+               output reg        MultStartE, MultDoneE,
+               output reg [4:0]  RsE, RtE);
 
     // Execute Stage Registers
-    reg        jumpE_, RegWriteE_, MemtoRegE_, MemWriteE_, RegDstE_, MultStartE, MultSgnE;
-    reg [1:0]  ALUSrcE_; 
+    reg        jumpE_, RegWriteE_, MemWriteE_, RegDstE_, MultStartE_, MultSgnE_;
+  	reg [1:0]  ALUSrcE_, MemtoRegE_; 
     reg [2:0]  ALUControlE_;
     reg [4:0]  RsE_, RtE_, RdE_;
     reg [31:0] rd1E_, rd2E_, UnsignedImmE_, SignImmE_, PCPlus4E_; 
 
     // Downstream pipeline control flags
-    assign jumpE = jumpE_;
-    assign RegWriteE = RegWriteE_;
-    assign MemWriteE = MemWriteE_;
-    assign MemtoRegE = MemtoRegE_;
+    assign jumpE       = jumpE_;
+    assign RegWriteE   = RegWriteE_;
+    assign MemWriteE   = MemWriteE_;
+    assign MemtoRegE   = MemtoRegE_;
 
     // Hazard Unit
     wire RdE;
@@ -50,36 +50,50 @@ module execute(input             clk, rst,
     assign RdE = RdE_;
 
     assign MultStartE = MultStartE_;
-    assign RegWriteE  = RegWriteE_;
-    assign MemtoRegE  = MemtoRegE_;
 
-    assign WriteRegE  = RegDstE      ? (RdE_) : (RtE_);
-    assign WriteDataE = forwardBE[1] ? (ALUOutM) : (forwardBE[0] ? (ResultW) : (rd2E_));
+    assign WriteRegE  = RegDstE_     ? (RdE) : (RtE);
+  	assign WriteDataE = ForwardBE[1] ? (ALUOutM) : (ForwardBE[0] ? (ResultW) : (rd2E_));
 
     // SrcA and SrcB selection for ALU/multiplier
-    wire [31:0] SrcAE, SrcBE, SrcBE_tmp, ALU_a, ALU_b, ALUOut;
+  wire [31:0] SrcAE, SrcBE, SrcBE_tmp, ALU_a, ALU_b, ALUOut;
     wire zero;
-    assign SrcAE     = forwardAE[1] ? (ALUOutM)       : (forwardAE[0] ? (ResultW)   : (rd1E_));
-    assign SrcBE_tmp = forwardBE[1] ? (ALUOutM)       : (forwardBE[0] ? (ResultW)   : (rd2E_));
-  	assign SrcBE     = ALUSrcE_[1]  ? (UnsignedImmE_) : (ALUSrcE_[1]  ? (SignImmE_) : (SrcBE_tmp));
-
+  	assign SrcAE     = ForwardAE[1] ? (ALUOutM)       : (ForwardAE[0] ? (ResultW)   : (rd1E_));
+  	assign SrcBE_tmp = ForwardBE[1] ? (ALUOutM)       : (ForwardBE[0] ? (ResultW)   : (rd2E_));
+  	assign SrcBE     = ALUSrcE_[1]  ? (UnsignedImmE_)   : (ALUSrcE_[1]  ? (SignImmE_) : (SrcBE_tmp));
     // MUX to select ALU inputs from multiplier or from register
     assign ALU_a     = MultStartE_   ? ALU_a_mult : SrcAE;
     assign ALU_b     = MultStartE_   ? ALU_b_mult : SrcBE;
-    wire [31:0] ALU_a_mult, ALU_b_mult, multOutHi, multOutLo;
+  	wire [31:0] ALU_a_mult, ALU_b_mult, multOutHi, multOutLo;
 
     // Instantiate and wire together ALU and multiplier
-    ALU alu(.a(ALU_a), .b(ALU_b), .f(ALUControlE), .y(ALUOut), .zero(zero));
+  	ALU alu(.a(ALU_a), .b(ALU_b), .f(ALUControlE_), .y(ALUOut), .zero(zero));
 
     multiplier m(.clk(clk),       .rst(rst),          .SrcAE(SrcAE),   
                  .SrcBE(SrcBE),   .MultE(MultStartE), .ALUOut(ALUOut), 
                  .ALU_zero(zero), .ALU_A(ALU_a_mult), .ALU_B(ALU_b_mult), 
                  .hi(multOutHi),  .lo(multOutLo),     .completed(MultDoneE));
 
-  	assign ALUOutE = MemWriteE_[1] ? (MemWriteE_[0] ? multOutHi : multOutLo) : ALUOut;
+  	assign ALUMultOut = MemtoRegE_[1] ? (MemtoRegE_[0] ? multOutHi : multOutLo) : ALUOut;
 
     always @ (posedge clk or posedge rst) begin
         if (rst) begin
+            jumpE_        <= 1'b0;
+            RegWriteE_    <= 1'b0;
+            MemtoRegE_    <= 1'b0;
+            MemWriteE_    <= 2'b0;
+            RegDstE_      <= 1'b0;
+            MultStartE_   <= 1'b0;
+            MultSgnE_     <= 1'b0;
+            ALUSrcE_      <= 1'b0;
+            ALUControlE_  <= 3'b0;
+            RsE_          <= 5'b0;
+            RtE_          <= 5'b0;
+            RdE_          <= 5'b0;
+            rd1E_         <= 32'b0;
+            rd2E_         <= 32'b0;
+            UnsignedImmE_ <= 32'b0;
+            SignImmE_     <= 32'b0;
+            PCPlus4E_     <= 32'b0;
         end else begin
             if (FlushE) begin
                 jumpE_        <= 1'b0;
@@ -99,7 +113,7 @@ module execute(input             clk, rst,
                 UnsignedImmE_ <= 32'b0;
                 SignImmE_     <= 32'b0;
                 PCPlus4E_     <= 32'b0;
-            end else
+            end else begin
                 jumpE_        <= jumpD;
                 RegWriteE_    <= RegWriteD;
                 MemtoRegE_    <= MemtoRegD;
@@ -117,8 +131,9 @@ module execute(input             clk, rst,
                 UnsignedImmE_ <= UnsignedImmD;
                 SignImmE_     <= SignImmD;
                 PCPlus4E_     <= PCPlus4D;
-            begin
+        	end
         end
     end
     
 endmodule
+
