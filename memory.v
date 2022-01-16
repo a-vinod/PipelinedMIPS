@@ -1,4 +1,4 @@
-module memory(input             clk,
+module memory(input             clk, rst,
                                 jumpE, RegWriteE, MemWriteE,
               input      [1:0]  MemtoRegE,
               input      [4:0]  WriteRegE,
@@ -6,9 +6,8 @@ module memory(input             clk,
               output reg        jumpM, RegWriteM,
               output reg [1:0]  MemtoRegM,
               output reg [4:0]  WriteRegM,
-              output reg [31:0] ReadDataM, ALUMultOutM, PCPlus8M);
-    data_memory dm(.clk(clk), .WE(MemWriteE), .A(ALUMultOutE), .WD(WriteDataE), .RD(ReadDataM));
-
+              output reg [31:0] ReadDataM, ALUMultOutM, PCPlus8M);  
+  
     // Pipeline registers
     reg        jumpM_, RegWriteM_;
     reg [1:0]  MemtoRegM_;
@@ -19,10 +18,9 @@ module memory(input             clk,
     assign RegWriteM  = RegWriteM_;
     assign MemtoRegM  = MemtoRegM_;
     assign WriteRegM  = WriteRegM_;
-    assign WriteDataM = WriteDataM_;
-    assign PCPlus4M   = PCPlus4M_;
 
     assign PCPlus8M = PCPlus4M_ + 4;
+  	data_memory dm(.clk(clk), .WE(MemWriteE), .A(ALUMultOutE), .WD(WriteDataM_), .RD(ReadDataM));
     
     always @ (posedge clk or posedge rst) begin
         if (rst) begin
