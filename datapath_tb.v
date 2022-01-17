@@ -1,17 +1,19 @@
 `timescale 1 ns/10 ps  // time-unit = 1 ns, precision = 10 ps
 
 module datapath_tb;
-    reg  clk, rst;
-    reg  stallF, stallD;
-    reg  forwardAD, forwardBD;
-    wire branchD;
-    reg  flushE, forwardAE, forwardBE;
-    wire MemtoRegE, RegWriteE;
-    wire MemToRegM, RegWriteM;
-    wire RegWriteW;
+    reg        clk, rst;
+    reg        stallF, stallD;
+    reg        forwardAD, forwardBD;
+  	wire [1:0] branchD;
+    reg        flushE;
+    reg  [1:0] forwardAE, forwardBE;
+    wire [2:0] WBSrcE;
+    wire       RegWriteE, RegWriteM;
+    wire [2:0] WBSrcM;
+    wire       RegWriteW;
     integer i;
   
-  	datapath dut(clk, rst, stallF, stallD, forwardAD, forwardBD, branchD, flushE, forwardAE, forwardBE, MemtoRegE, RegWriteE, MemToRegM,RegWriteM, RegWriteW);
+  	datapath dut(clk, rst, stallF, stallD, forwardAD, forwardBD, branchD, flushE, forwardAE, forwardBE, RegWriteE, WBSrcE, RegWriteM, WBSrcM, RegWriteW);
     initial begin
         $dumpfile("dump.vcd");
         $dumpvars(1);

@@ -2,8 +2,8 @@ module execute(input             clk, rst,
                // DECODE STAGE
                // Downstream control flags
                input			 MultStartD, MultSgnD, RegWriteD, MemWriteD,
-                                 BranchD, RegDstD, jumpD,
-               input      [1:0]  ALUSrcD, MemtoRegD, // WBSrc
+                                 RegDstD, jumpD,
+               input      [1:0]  BranchD, ALUSrcD, MemtoRegD, // WBSrc
                input      [2:0]  ALUControlD,
                // Data
                input      [4:0]  RsD, RtD, RdD,

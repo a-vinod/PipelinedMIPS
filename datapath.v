@@ -2,8 +2,8 @@ module datapath(input             clk, rst,
                                   stallF, 
 
                 input             stallD,
-                input      [1:0]  forwardAD, forwardBD,
-                output            branchD,
+                input             forwardAD, forwardBD,
+                output     [1:0]  branchD,
                 
                 input             flushE,
                 input      [1:0]  forwardAE, forwardBE,
@@ -22,7 +22,7 @@ module datapath(input             clk, rst,
     wire [31:0] resultW, ALUMultOutM;
     wire RegWriteW_;
     wire [31:0] pcplus4D, pcbranchD;
-    wire [1:0] branchD_, alusrcD;
+  	wire [1:0] alusrcD, branchD_;
     wire [2:0] WBSrcD, alucontrolD;
     wire [4:0] rsD, rtD, reD;
     wire [31:0] signimmD, unsignimmD;
@@ -38,7 +38,7 @@ module datapath(input             clk, rst,
     wire [31:0] ALUMultOutE, WriteDataE, PCPlus4E;
     wire        MultStartE, MultDoneE;
     wire [4:0]  RsE, RtE;
-    execute e(clk, rst,  multstartD, multsgnD, regwriteD, memwriteD, branchD_, regdstD, jumpD, alusrcD, WBSrcD[2:1], alucontrolD, rsD, rtD, reD, rd1d, rd2d, signimmD, unsignimmD, pcplus4D,  jumpE, RegWriteE_, MemWriteE, WBSrcE_[2:1], WriteRegE, ALUMultOutM, ALUMultOutE, WriteDataE, PCPlus4E, resultW, flushE, forwardAE, forwardBE, MultStartE, MultDoneE, RsE, RtE);
+    execute e(clk, rst,  multstartD, multsgnD, regwriteD, memwriteD, regdstD, jumpD, branchD_, alusrcD, WBSrcD[2:1], alucontrolD, rsD, rtD, reD, rd1d, rd2d, signimmD, unsignimmD, pcplus4D,  jumpE, RegWriteE_, MemWriteE, WBSrcE_[2:1], WriteRegE, ALUMultOutM, ALUMultOutE, WriteDataE, PCPlus4E, resultW, flushE, forwardAE, forwardBE, MultStartE, MultDoneE, RsE, RtE);
 
     wire        jumpM, RegWriteM_;
     wire [2:0]  WBSrcM_;
@@ -46,7 +46,7 @@ module datapath(input             clk, rst,
     wire [31:0] ReadDataM, PCPlus8M;
     memory m(clk, rst, jumpE, RegWriteE_, MemWriteE, WBSrcE_[1:0], WriteRegE, ALUMultOutE, WriteDataE, PCPlus4E, jumpM, RegWriteM_, WBSrcM_[1:0], WriteRegM, ReadDataM, ALUMultOutM, PCPlus8M);
 
-    writeback w(clk, rst, jumpM, RegWriteM_, WBSrcM_, WriteRegM, ReadDataM, ALUMultOutM, PCPlus8M, pcsrcD, jumpD, jumpdstD, PCPlus4F, pcbranchD, RegWriteW_, writeregW, resultW, PC);
+    writeback w(clk, rst, jumpM, RegWriteM_, WBSrcM_[1:0], WriteRegM, ReadDataM, ALUMultOutM, PCPlus8M, pcsrcD, jumpD, jumpdstD, PCPlus4F, pcbranchD, RegWriteW_, writeregW, resultW, PC);
 
     assign branchD   = branchD_;
     assign WBSrcE = WBSrcE_;
