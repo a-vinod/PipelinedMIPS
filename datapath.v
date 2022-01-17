@@ -53,6 +53,3 @@ module datapath(input             clk, rst,
     assign RegWriteM = RegWriteM_;
     assign RegWriteW = RegWriteW_;
 endmodule
-
-//Stage Fetch
-
