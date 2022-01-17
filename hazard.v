@@ -5,7 +5,7 @@ module hazard(
     input [2:0] wbsrcE, wbsrcM,
     input regwriteE, regwriteM, regwriteW, 
     input multstartE, pve,
-    input [5:0] rtD, rsD, rsE, rtE, writeregE, writeregW, writeregM,
+    input [4:0] rtD, rsD, rsE, rtE, writeregE, writeregW, writeregM,
     output stallF, stallD, flushE,
     output forwardAD, forwardBD,
     output [1:0] forwardAE, forwardBE
@@ -14,7 +14,7 @@ module hazard(
 endmodule
 
 module forward(
-    input [5:0] rtD, rsD, rsE, rtE, writeregE, writeregW, writeregM,
+    input [4:0] rtD, rsD, rsE, rtE, writeregE, writeregW, writeregM,
     input regwriteE, regwriteM, regwriteW, 
     output reg forwardAD, forwardBD,
     output reg [1:0] forwardAE, forwardBE
@@ -51,7 +51,7 @@ module stall(
     input [1:0] branchD,
     input [2:0] wbsrcE, wbsrcM,
     input regwriteE, regwriteM, regwriteW,
-    input [5:0] rtD, rsD, rsE, rtE, writeregE, writeregW, writeregM,
+    input [4:0] rtD, rsD, rsE, rtE, writeregE, writeregW, writeregM,
     input multstartE, pve,
     output reg stallF, stallD, flushE
 );
