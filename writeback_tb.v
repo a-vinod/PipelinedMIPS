@@ -10,11 +10,12 @@ module writeback_tb;
   	reg  [27:0] jumpDstD;
   	reg  [31:0] PCPlus4F, PCBranchD;
 	wire        RegWriteW;
+  	wire [4:0] WriteRegW;
   	wire [31:0] ResultW;
-  	wire [31:0] PC, WriteRegW;
+  	wire [31:0] PC;
     integer i;
   
-  	writeback dut(clk, rst, jumpM, RegWriteM, MemtoRegM, WriteRegM, ReadDataM, ALUMultOutM, PCPlus8M, PCSrcD, jumpD, jumpDstD, PCPlus4F, PCBranchD, RegWriteW, ResultW, PC, WriteRegW);
+  	writeback dut(clk, rst, jumpM, RegWriteM, MemtoRegM, WriteRegM, ReadDataM, ALUMultOutM, PCPlus8M, PCSrcD, jumpD, jumpDstD, PCPlus4F, PCBranchD, RegWriteW, WriteRegW, ResultW, PC);
     initial begin
         $dumpfile("dump.vcd");
         $dumpvars(1);

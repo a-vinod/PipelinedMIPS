@@ -18,7 +18,7 @@ module execute(input             clk, rst,
                // Fordwarding
                input      [31:0] ALUOutM,
                // Data
-               output reg [31:0] ALUMultOut, WriteDataE, PCPlus4E,
+               output reg [31:0] ALUMultOutE, WriteDataE, PCPlus4E,
 
                // WRITEBACK STAGE
                // Forwarding
@@ -73,7 +73,7 @@ module execute(input             clk, rst,
                  .ALU_zero(zero), .ALU_A(ALU_a_mult), .ALU_B(ALU_b_mult), 
                  .hi(multOutHi),  .lo(multOutLo),     .completed(MultDoneE));
 
-  	assign ALUMultOut = MemtoRegE_[1] ? (MemtoRegE_[0] ? multOutHi : multOutLo) : ALUOut;
+  	assign ALUMultOutE = MemtoRegE_[1] ? (MemtoRegE_[0] ? multOutHi : multOutLo) : ALUOut;
 
     always @ (posedge clk or posedge rst) begin
         if (rst) begin
