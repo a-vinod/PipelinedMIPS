@@ -1,6 +1,6 @@
 # PipelinedMIPS
 
-[schematic](docs/lab1schematicfin.jpg)
+![schematic](docs/lab1schematicfin.jpg)
 
 alu.v - ALU
 
