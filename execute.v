@@ -28,7 +28,7 @@ module execute(input             clk, rst,
                input             FlushE,
                input      [1:0]  ForwardAE, ForwardBE,
                output reg        MultStartE, MultDoneE,
-               output reg [4:0]  RsE, RtE);
+               output reg [4:0]  RsE, RtE, RdE);
 
     // Execute Stage Registers
     reg        jumpE_, RegWriteE_, MemWriteE_, RegDstE_, MultStartE_, MultSgnE_;
@@ -44,7 +44,6 @@ module execute(input             clk, rst,
     assign MemtoRegE   = MemtoRegE_;
 
     // Hazard Unit
-    wire RdE;
     assign RsE = RsE_;
     assign RtE = RtE_;
     assign RdE = RdE_;
@@ -136,4 +135,3 @@ module execute(input             clk, rst,
     end
     
 endmodule
-

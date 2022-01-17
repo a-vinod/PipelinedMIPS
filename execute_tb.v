@@ -4,7 +4,7 @@ module testbench;
     reg 		clk, rst;
   	reg 		MultStartD, MultSgnD, RegWriteD, MemWriteD;
   	reg 		BranchD, RegDstD, jumpD;
-  reg  [1:0] 	MemtoRegD, ALUSrcD;
+    reg  [1:0] 	MemtoRegD, ALUSrcD;
   	reg  [2:0] 	ALUControlD;
   	reg  [4:0] 	RsD, RtD, RdD;
     reg  [31:0] rd1D, rd2D, SignImmD, UnsignedImmD, PCPlus4D;
@@ -12,7 +12,7 @@ module testbench;
     reg  [31:0] ResultW;
     reg 		FlushE;
   	reg  [1:0] 	ForwardAE, ForwardBE;
-  	reg  [4:0] 	RsE, RtE;
+  	reg  [4:0] 	RsE, RtE, RdE;
   
   	wire [31:0] ALUMultOut, WriteDataE, PCPlus4E;
   	wire 		jumpE, RegWriteE, MemWriteE;
@@ -20,7 +20,7 @@ module testbench;
     wire [4:0] 	WriteRegE;
     wire 		MultStartE, MultDoneE;
   
-    execute dut(clk, rst, MultStartD, MultSgnD, RegWriteD, MemWriteD, BranchD, RegDstD, jumpD,ALUSrcD, MemtoRegD, ALUControlD, RsD, RtD, RdD, rd1D, rd2D, SignImmD, UnsignedImmD, PCPlus4D, jumpE, RegWriteE, MemWriteE, MemtoRegE, WriteRegE, ALUOutM, ALUMultOut, WriteDataE, PCPlus4E, ResultW, FlushE, ForwardAE, ForwardBE, MultStartE, MultDoneE, RsE, RtE);
+    execute dut(clk, rst, MultStartD, MultSgnD, RegWriteD, MemWriteD, BranchD, RegDstD, jumpD,ALUSrcD, MemtoRegD, ALUControlD, RsD, RtD, RdD, rd1D, rd2D, SignImmD, UnsignedImmD, PCPlus4D, jumpE, RegWriteE, MemWriteE, MemtoRegE, WriteRegE, ALUOutM, ALUMultOut, WriteDataE, PCPlus4E, ResultW, FlushE, ForwardAE, ForwardBE, MultStartE, MultDoneE, RsE, RtE, RdE);
 
     integer i;
     initial begin
