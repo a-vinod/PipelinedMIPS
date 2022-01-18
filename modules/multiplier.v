@@ -2,19 +2,18 @@
 module multiplier (input             clk, rst,
                    input      [31:0] SrcAE, SrcBE,
                    input             MultE,
-                   input	  [31:0] ALUOut,
-                   input 	  		 ALU_zero,
-                   output reg [31:0] ALU_A, ALU_B,
+                   input      [31:0] ALUOut,
+                   input 	         ALU_zero,
+                   output     [31:0] ALU_A, ALU_B,
                    output reg [31:0] hi, lo,
                    output reg        completed);
   	reg  [5:0]  counter;
 
-  	reg  [31:0] A, B, C;
+  	reg  [31:0] A, B;
   	reg  [63:0] product, product_;
 
   	assign ALU_A = A;
   	assign ALU_B = B;
-  	assign C = ALUOut;
 
   	always @ (posedge clk or posedge rst) begin
         if (rst) begin
@@ -48,14 +47,14 @@ module multiplier (input             clk, rst,
                 // then we must've already set A and B appropriately in the 
                 // previous clock cycle and C is ready to use in this clock cycle
                 // to update the product register.
-                A <= product[1] ? C >> 1 : (product[0] ? C >> 1 : 32'b0);
+                A <= product[1] ? ALUOut >> 1 : (product[0] ? ALUOut >> 1 : 32'b0);
               	B <= product[1] ? SrcBE  : 32'b0;     
 
                 // If the product's LSB is 1, then we need to update the left-half
                 // of the product register with the pre-computed sum from C. But if
                 // the LSB is 0, then we don't change the register. Regardless, we 
                 // shift right by 1.         
-                product <= ((product[0]) ? {C, product[31:0]} : product) >> 1;
+                product <= ((product[0]) ? {ALUOut, product[31:0]} : product) >> 1;
             end else if (counter == 33) begin
                 completed <= 1;
               	hi <= product[63:32];

@@ -1,16 +1,16 @@
-module writeback(input             clk, rst,
-                 input             jumpM, RegWriteM,
-                 input      [2:0]  MemtoRegM,
-                 input      [4:0]  WriteRegM,
-                 input      [31:0] ReadDataM, ALUMultOutM, PCPlus8M,
+module writeback(input        clk, rst,
+                 input        jumpM, RegWriteM,
+                 input [2:0]  MemtoRegM,
+                 input [4:0]  WriteRegM,
+                 input [31:0] ReadDataM, ALUMultOutM, PCPlus8M,
 
-                 input             PCSrcD, jumpD,
-                 input      [27:0] jumpDstD,
-                 input      [31:0] PCPlus4F, PCBranchD,
+                 input        PCSrcD, jumpD,
+                 input [27:0] jumpDstD,
+                 input [31:0] PCPlus4F, PCBranchD,
                  
-                 output reg        RegWriteW,
-                 output reg [4:0]  WriteRegW,
-                 output reg [31:0] ResultW, PC);
+                 output 			 RegWriteW,
+                 output [4:0]  WriteRegW,
+                 output [31:0] ResultW, PC);
     // Pipeline registers
     reg RegWriteW_, jumpW_;
     reg [4:0]  WriteRegW_;
