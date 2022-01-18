@@ -7,8 +7,10 @@ output [31:0] instrF, pcplus4F
 );
 
 wire [31:0] pcF;
+reg [31:0] currentPC;
 
-flopr #(32) pcreg(clk, reset, stallF, pc, pcF);//Set for reset and update pc value
+flopr pcreg(clk, reset, stallF, currentPC, pc, pcF);//Set for reset and update pc value
+assign currentPC = pcF;
 imem imem(pcF[7:2], instrF); //Instruction memory
 adder pcadd1(pcF, 32'b100, pcplus4F); //PC + 4
 
@@ -32,7 +34,7 @@ module imem(input   [5:0]  a,
 
   initial
     begin
-      $readmemh("memfile.dat",RAM); // initialize memory with test program. Change this with memfile2.dat for the modified code
+      $readmemh("tb1.dat",RAM); // initialize memory with test program. Change this with memfile2.dat for the modified code
     end
 
   assign rd = RAM[a]; // word aligned
@@ -41,15 +43,18 @@ endmodule
 //flopr is the module controling the PC
 //If reset signal is 1, the address is reset to 1
 //If the reset is 0, we keeps setting pc to pcnext
-module flopr # (parameter WIDTH = 8) //use for reset
+module flopr //use for reset
 (input clk, reset, stallF,
-input [WIDTH-1:0] d,
-output reg [WIDTH-1:0] q);
+input [31:0] c,
+input [31:0] d,
+output reg [31:0] q);
     always @ (posedge clk, posedge reset)
         if (reset) 
             q <= 0;
         else if(!stallF)
             q <= d;
+        else
+            q <= c;
 endmodule
 
 module adder (input [31:0] a, b,

@@ -19,8 +19,13 @@ output [27:0] jumpdstD
 );
 
 wire [31:0] instrD;
+reg [31:0] currentinstr, currentpcplus4;
 wire [1:0] clear; //0 for branch, 1 for jal
-fdgate fdg(clk, stallD, clear, instrF, pcplus4F, instrD, pcplus4D);//the gate 
+assign clear[1] = jumpD;
+assign clear[0] = branchD[0] | branchD[1];
+fdgate fdg(clk, stallD, clear, instrF, pcplus4F, currentinstr, currentpcplus4, instrD, pcplus4D);//the gate 
+
+assign {currentinstr, currentpcplus4} = {instrD, pcplus4D};
 
 controller c(instrD[31:26], instrD[5:0],
                multstartD, multsgnD,
@@ -59,13 +64,13 @@ endmodule
 module fdgate(  //pipeline gate between F and D
 input clk, stallD,
 input [1:0] clear,
-input [31:0] instrF, pcplus4F,
+input [31:0] instrF, pcplus4F, ci, cp,
 output reg [31:0] instrD, pcplus4D
 );
 
-always @ (posedge clk)
+always @ (posedge clk, posedge clear)
     begin
-        if(clear!=0)
+        if(clear!=2'b00)
             begin
               instrD <= 0;
               pcplus4D <= 0;
@@ -74,6 +79,11 @@ always @ (posedge clk)
             begin
               instrD <= instrF;
               pcplus4D <= pcplus4F;
+            end
+        else 
+            begin
+              instrD <= ci;
+              pcplus4D <= cp;
             end
     end
 
@@ -145,7 +155,7 @@ output [31:0] rd1, rd2);
 
     reg [31:0] rf[31:0];
     always @ (posedge clk)
-        if (we3) 
+        if (we3==1) 
             rf[wa3] <= wd3;
     
     assign rd1 = (a1 != 0) ? rf[a1] : 0;

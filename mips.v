@@ -1,5 +1,5 @@
 module mips(input clk, rst);
-    wire        stallF;
+    wire stallF;
 
     wire        stallD;
     wire        forwardAD, forwardBD;

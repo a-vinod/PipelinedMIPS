@@ -2,15 +2,14 @@
 module multiplier (input             clk, rst,
                    input      [31:0] SrcAE, SrcBE,
                    input             MultE,
-                   input	    [31:0] ALUOut,
-                   input 	  		     ALU_zero,
-                   output     [31:0] ALU_A, ALU_B,
+                   input	  [31:0] ALUOut,
+                   input 	  		 ALU_zero,
+                   output reg [31:0] ALU_A, ALU_B,
                    output reg [31:0] hi, lo,
                    output reg        completed);
   	reg  [5:0]  counter;
 
-  	reg  [31:0] A, B;
-		wire [31:0] C;
+  	reg  [31:0] A, B, C;
   	reg  [63:0] product, product_;
 
   	assign ALU_A = A;

@@ -11,7 +11,6 @@ wire [31:0] instrF, pcplus4F;
   // initialize test
   initial
     begin
-    pc <= 0;
       reset <= 1; # 12; reset <= 0;
 	 stallF <= 0;
      i <= 0;
