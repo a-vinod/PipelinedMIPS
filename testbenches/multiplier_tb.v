@@ -1,7 +1,7 @@
 `timescale 1 ns/10 ps  // time-unit = 1 ns, precision = 10 ps
 
 module multiplier_tb;
-  reg clk, rst, MultE;
+  reg clk, rst, MultE, MultSgn;
   reg [31:0] SrcAE, SrcBE;
   wire [31:0] A, B;
   reg [2:0]  ALU_f_add;
@@ -11,7 +11,7 @@ module multiplier_tb;
   
   ALU alu(.a(A), .b(B), .f(ALU_f_add), .y(ALUOut), .zero(zero));
   
-  multiplier dut(.clk(clk), .rst(rst), .SrcAE(SrcAE), .SrcBE(SrcBE), .MultE(MultE), .ALUOut(ALUOut), .ALU_zero(zero), .ALU_A(A), .ALU_B(B), .hi(hi), .lo(lo), .completed(completed));
+  multiplier dut(.clk(clk), .rst(rst), .SrcAE(SrcAE), .SrcBE(SrcBE), .MultE(MultE), .MultSgn(MultSgn), .ALUOut(ALUOut), .ALU_zero(zero), .ALU_A(A), .ALU_B(B), .hi(hi), .lo(lo), .completed(completed));
   
   integer i;
   initial begin
@@ -20,9 +20,10 @@ module multiplier_tb;
     rst = 0;
     ALU_f_add = 3'b010;
     
+    MultSgn = 0;
     MultE = 1;
-    SrcAE = 9'b100000001;
-    SrcBE = 6'b100101;
+    SrcAE = 6'b110011;
+    SrcBE = 6'b110011;
     
     #5 clk = !clk;
     rst = 0;
