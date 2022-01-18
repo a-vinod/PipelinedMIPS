@@ -1,34 +1,34 @@
-module execute(input         clk, rst,
+module execute(input             clk, rst,
                // DECODE STAGE
                // Downstream control flags
-               input		 MultStartD, MultSgnD, RegWriteD, MemWriteD,
-                             RegDstD, jumpD,
-               input  [1:0]  BranchD, ALUSrcD, 
-               input  [2:0]  MemtoRegD,ALUControlD,// WBSrc
+               input			 MultStartD, MultSgnD, RegWriteD, MemWriteD,
+                                 RegDstD, jumpD,
+               input      [1:0]  BranchD, ALUSrcD, 
+               input      [2:0]  MemtoRegD,ALUControlD,// WBSrc
                // Data
-               input  [4:0]  RsD, RtD, RdD,
-               input  [31:0] rd1D, rd2D, SignImmD, 
-                             UnsignedImmD, PCPlus4D,
+               input      [4:0]  RsD, RtD, RdD,
+               input      [31:0] rd1D, rd2D, SignImmD, 
+                                 UnsignedImmD, PCPlus4D,
 
                // MEMORY STAGE
                // Downstream control flags
-               output        jumpE, RegWriteE, MemWriteE,
-               output [2:0]  MemtoRegE,
-               output [4:0]  WriteRegE,
+               output reg        jumpE, RegWriteE, MemWriteE,
+               output reg [2:0]  MemtoRegE,
+               output reg [4:0]  WriteRegE,
                // Fordwarding
-               input  [31:0] ALUOutM,
+               input      [31:0] ALUOutM,
                // Data
-               output [31:0] ALUMultOutE, WriteDataE, PCPlus4E,
+               output reg [31:0] ALUMultOutE, WriteDataE, PCPlus4E,
 
                // WRITEBACK STAGE
                // Forwarding
-               input  [31:0] ResultW,
+               input      [31:0] ResultW,
 
                // HAZARD UNIT
-               input         FlushE,
-               input  [1:0]  ForwardAE, ForwardBE,
-               output        MultStartE, MultDoneE,
-               output [4:0]  RsE, RtE, RdE);
+               input             FlushE,
+               input      [1:0]  ForwardAE, ForwardBE,
+               output reg        MultStartE, MultDoneE,
+               output reg [4:0]  RsE, RtE, RdE);
 
     // Execute Stage Registers
     reg        jumpE_, RegWriteE_, MemWriteE_, RegDstE_, MultStartE_, MultSgnE_;
@@ -71,7 +71,7 @@ module execute(input         clk, rst,
     wire MultDoneE_;
 
     multiplier m(.clk(clk),       .rst(rst),          .SrcAE(SrcAE),   
-                 .SrcBE(SrcBE),   .MultE(MultStartE), .ALUOut(ALUOut), 
+                 .SrcBE(SrcBE),   .MultE(MultStartE), .MultSgn(MultSgnE_), .ALUOut(ALUOut), 
                  .ALU_zero(zero), .ALU_A(ALU_a_mult), .ALU_B(ALU_b_mult), 
                  .hi(multOutHi),  .lo(multOutLo),     .completed(MultDoneE_));
 
