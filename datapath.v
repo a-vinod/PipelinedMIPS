@@ -3,21 +3,21 @@ module datapath(input             clk, rst,
 
                 input             stallD,
                 input             forwardAD, forwardBD,
-                output reg [1:0]  branchD,
-                output reg [4:0]  RsD, RtD,
+                output     [1:0]  branchD,
+                output     [4:0]  RsD, RtD,
                 
                 input             flushE,
                 input      [1:0]  forwardAE, forwardBE,
-                output reg        RegWriteE, MultStartE, MultDoneE,
-                output reg [2:0]  WBSrcE,
-                output reg [4:0]  RsE, RtE, WriteRegE,
+                output            RegWriteE, MultStartE, MultDoneE,
+                output     [2:0]  WBSrcE,
+                output     [4:0]  RsE, RtE, WriteRegE,
                 
-                output reg        RegWriteM,
-                output reg [2:0]  WBSrcM,
-                output reg [4:0]  WriteRegM,
+                output            RegWriteM,
+                output     [2:0]  WBSrcM,
+                output     [4:0]  WriteRegM,
                 
-                output reg        RegWriteW,
-                output reg [4:0]  WriteRegW);
+                output            RegWriteW,
+                output     [4:0]  WriteRegW);
 
     wire [31:0] PC, InstrF, PCPlus4F;
     fetch f(clk, rst, stallF, PC, InstrF, PCPlus4F);

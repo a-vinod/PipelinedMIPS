@@ -12,13 +12,13 @@ module execute(input             clk, rst,
 
                // MEMORY STAGE
                // Downstream control flags
-               output reg        jumpE, RegWriteE, MemWriteE,
-               output reg [1:0]  MemtoRegE,
-               output reg [4:0]  WriteRegE,
+               output            jumpE, RegWriteE, MemWriteE,
+               output     [1:0]  MemtoRegE,
+               output     [4:0]  WriteRegE,
                // Fordwarding
                input      [31:0] ALUOutM,
                // Data
-               output reg [31:0] ALUMultOutE, WriteDataE, PCPlus4E,
+               output     [31:0] ALUMultOutE, WriteDataE, PCPlus4E,
 
                // WRITEBACK STAGE
                // Forwarding
@@ -27,8 +27,8 @@ module execute(input             clk, rst,
                // HAZARD UNIT
                input             FlushE,
                input      [1:0]  ForwardAE, ForwardBE,
-               output reg        MultStartE, MultDoneE,
-               output reg [4:0]  RsE, RtE, RdE);
+               output            MultStartE, MultDoneE,
+               output     [4:0]  RsE, RtE, RdE);
 
     // Execute Stage Registers
     reg        jumpE_, RegWriteE_, MemWriteE_, RegDstE_, MultStartE_, MultSgnE_;
@@ -58,11 +58,11 @@ module execute(input             clk, rst,
     wire zero;
   	assign SrcAE     = ForwardAE[1] ? (ALUOutM)       : (ForwardAE[0] ? (ResultW)   : (rd1E_));
   	assign SrcBE_tmp = ForwardBE[1] ? (ALUOutM)       : (ForwardBE[0] ? (ResultW)   : (rd2E_));
-  	assign SrcBE     = ALUSrcE_[1]  ? (UnsignedImmE_)   : (ALUSrcE_[1]  ? (SignImmE_) : (SrcBE_tmp));
+  	assign SrcBE     = ALUSrcE_[1]  ? (UnsignedImmE_) : (ALUSrcE_[1]  ? (SignImmE_) : (SrcBE_tmp));
     // MUX to select ALU inputs from multiplier or from register
+		wire [31:0] ALU_a_mult, ALU_b_mult, multOutHi, multOutLo;
     assign ALU_a     = MultStartE_   ? ALU_a_mult : SrcAE;
     assign ALU_b     = MultStartE_   ? ALU_b_mult : SrcBE;
-  	wire [31:0] ALU_a_mult, ALU_b_mult, multOutHi, multOutLo;
 
     // Instantiate and wire together ALU and multiplier
   	ALU alu(.a(ALU_a), .b(ALU_b), .f(ALUControlE_), .y(ALUOut), .zero(zero));
@@ -134,4 +134,4 @@ module execute(input             clk, rst,
         end
     end
     
-endmodule
+endmoduleequest.XE*

@@ -3,10 +3,10 @@ module memory(input             clk, rst,
               input      [1:0]  MemtoRegE,
               input      [4:0]  WriteRegE,
               input      [31:0] ALUMultOutE, WriteDataE, PCPlus4E,
-              output reg        jumpM, RegWriteM,
-              output reg [1:0]  MemtoRegM,
-              output reg [4:0]  WriteRegM,
-              output reg [31:0] ReadDataM, ALUMultOutM, PCPlus8M);  
+              output            jumpM, RegWriteM,
+              output     [1:0]  MemtoRegM,
+              output     [4:0]  WriteRegM,
+              output     [31:0] ReadDataM, ALUMultOutM, PCPlus8M);  
   
     // Pipeline registers
     reg        jumpM_, RegWriteM_;
