@@ -59,10 +59,48 @@ module stall(
     output reg stallF, stallD, flushE
 );
 reg multplier;
+initial begin
+    multplier = 0;
+end
+always@(*)
+begin
+    stallF <= 0;
+    stallD <= 0;
+    flushE <= 0;
 
-assign {stallF, stallD, flushE} = ((((rsD == rtE) || (rtE == rtD)) && (wbsrcE == 3'b011)) || (branchD && (regwriteE && ((rsD == writeregE) || (rtD == writeregE))) || 
-((wbsrcM == 3'b011) && ((rsD == writeregM) || (rtD == writeregM)))) || ((multplier == 0) && (multstartE == 1)) || ((multplier == 1) && (pve == 0))) ? {1,1,1} : {0,0,0};
+    if(((rsD == rtE) || (rtE == rtD)) && (wbsrcE == 3'b011)) //lw
+    begin
+        stallF <= 1;
+        stallD <= 1;
+        flushE <= 1;
+    end
 
-assign multplier = (((multplier == 0) && (multstartE == 1))||((multplier == 1) && (pve == 1) && (multstartE != 1))) ? 1 : 0 ;
+    if(branchD && (regwriteE && ((rsD == writeregE) || (rtD == writeregE))) || ((wbsrcM == 3'b011) && ((rsD == writeregM) || (rtD == writeregM)))) //branch
+    begin
+        stallF <= 1;
+        stallD <= 1;
+        flushE <= 1;
+    end
 
+    if((multplier == 0) && (multstartE == 1)) //start multplication
+    begin
+        stallF <= 1;
+        stallD <= 1;
+        flushE <= 1;
+        multplier <= 1;
+    end
+
+    if((multplier == 1) && (pve == 0)) //during multplication
+    begin
+        stallF <= 1;
+        stallD <= 1;
+        flushE <= 1;
+    end
+
+    if((multplier == 1) && (pve == 1) && (multstartE != 1)) //end multplication
+    begin
+        multplier <= 1;
+    end
+    
+end
 endmodule
