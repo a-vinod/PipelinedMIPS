@@ -75,7 +75,7 @@ begin
         flushE <= 1;
     end
 
-    if(branchD && (regwriteE && ((rsD == writeregE) || (rtD == writeregE))) || ((wbsrcM == 3'b011) && ((rsD == writeregM) || (rtD == writeregM)))) //branch
+    if((branchD!=2'b00) && ((regwriteE && ((rsD == writeregE) || (rtD == writeregE))) || ((wbsrcM == 3'b011) && ((rsD == writeregM) || (rtD == writeregM))))) //branch
     begin
         stallF <= 1;
         stallD <= 1;
