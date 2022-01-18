@@ -11,6 +11,9 @@ module hazard(
     output [1:0] forwardAE, forwardBE
 );
 
+    forward fw(rtD, rsD, rsE, rtE, writeregE, writeregW, writeregM,regwriteE, regwriteM, regwriteW,forwardAD, forwardBD,forwardAE, forwardBE);
+    stall st(branchD, wbsrcE, wbsrcM,regwriteE, regwriteM, regwriteW,rtD, rsD, rsE, rtE, writeregE, writeregW, writeregM,multstartE, pve, stallF, stallD, flushE);
+
 endmodule
 
 module forward(
@@ -56,7 +59,9 @@ module stall(
     output reg stallF, stallD, flushE
 );
 reg multplier;
-
+initial begin
+    multplier = 0;
+end
 always@(*)
 begin
     stallF <= 0;
