@@ -19,13 +19,10 @@ output [27:0] jumpdstD
 );
 
 wire [31:0] instrD;
-reg [31:0] currentinstr, currentpcplus4;
 wire [1:0] clear; //0 for branch, 1 for jal
 assign clear[1] = jumpD;
 assign clear[0] = branchD[0] | branchD[1];
-fdgate fdg(clk, reset, stallD, clear, instrF, pcplus4F, currentinstr, currentpcplus4, instrD, pcplus4D);//the gate 
-
-assign {currentinstr, currentpcplus4} = {instrD, pcplus4D};
+fdgate fdg(clk, reset, stallD, clear, instrF, pcplus4F, instrD, pcplus4D);//the gate 
 
 controller c(instrD[31:26], instrD[5:0],
                multstartD, multsgnD,
@@ -64,9 +61,11 @@ endmodule
 module fdgate(  //pipeline gate between F and D
 input clk, rst, stallD,
 input [1:0] clear,
-input [31:0] instrF, pcplus4F, ci, cp,
+input [31:0] instrF, pcplus4F,
 output reg [31:0] instrD, pcplus4D
 );
+
+reg [31:0] stall_instr, stall_pcplus4D;
 
 always @ (posedge clk, posedge rst, posedge clear)
     begin
@@ -79,11 +78,13 @@ always @ (posedge clk, posedge rst, posedge clear)
             begin
               instrD <= instrF;
               pcplus4D <= pcplus4F;
+              stall_instr <= instrD;
+              stall_pcplus4D <= pcplus4D;
             end
         else 
             begin
-              instrD <= ci;
-              pcplus4D <= cp;
+              instrD <= instrD;
+              pcplus4D <= pcplus4D;
             end
     end
 
@@ -210,9 +211,10 @@ end
 endmodule
 
 //This 2:1 mux implement all the muxs in the design
+/*
 module mux2 # (parameter WIDTH = 8) //2:1MUX
 (input [WIDTH-1:0] d0, d1,
 input s,
 output [WIDTH-1:0] y);
     assign y = s ? d1 : d0;
-endmodule
+endmodule*/

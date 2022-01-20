@@ -6,35 +6,24 @@ module memory(input             clk, rst,
               output reg        jumpM, RegWriteM,
               output reg [2:0]  MemtoRegM,
               output reg [4:0]  WriteRegM,
-              output reg [31:0] ReadDataM, ALUMultOutM, PCPlus8M);  
+              output reg [31:0] ALUMultOutM,
+              output     [31:0] PCPlus8M, ReadDataM);  
   
-    // Pipeline registers
-    reg        jumpM_, RegWriteM_;
-    reg [2:0]  MemtoRegM_;
-    reg [4:0]  WriteRegM_;
-    reg [31:0]  WriteDataM_, PCPlus4M_;
-
-    wire [31:0] ReadDataM_;
-
-    assign jumpM      = jumpM_;
-    assign RegWriteM  = RegWriteM_;
-    assign MemtoRegM  = MemtoRegM_;
-    assign WriteRegM  = WriteRegM_;
+    reg [31:0]  WriteDataM, PCPlus4M_;
 
     assign PCPlus8M = PCPlus4M_ + 4;
-  	data_memory dm(.clk(clk), .WE(MemWriteE), .A(ALUMultOutE), .WD(WriteDataM_), .RD(ReadDataM_));
 
-    assign ReadDataM = ReadDataM_;
+  	data_memory dm(.clk(clk), .WE(MemWriteE), .A(ALUMultOutE), .WD(WriteDataM), .RD(ReadDataM));
     
     always @ (posedge clk or posedge rst) begin
 
-            jumpM_     <= jumpE;
-            RegWriteM_ <= RegWriteE;
-            MemtoRegM_ <= MemtoRegE;
+            jumpM     <= jumpE;
+            RegWriteM <= RegWriteE;
+            MemtoRegM <= MemtoRegE;
 
             ALUMultOutM <= ALUMultOutE;
-            WriteDataM_  <= WriteDataE;
-            WriteRegM_   <= WriteRegE;
+            WriteDataM  <= WriteDataE;
+            WriteRegM   <= WriteRegE;
             PCPlus4M_    <= PCPlus4E;
 
     end

@@ -9,15 +9,12 @@ module multiplier (input             clk, rst,
                    output reg        completed);
   	reg  [5:0]  counter;
 
-  	reg  [31:0] A, B, C;
   	reg  [63:0] product, invertpro;
     wire [31:0] ta,tb;
 
     // Twos complement to convert negative to positive values
     assign ta = SrcAE[31] ? (~SrcAE + 1) : SrcAE;
     assign tb = SrcBE[31] ? (~SrcBE + 1) : SrcBE;
-
-  	assign C = ALUOut;
 
   	always @ (posedge clk or posedge rst) begin
         if (rst) begin

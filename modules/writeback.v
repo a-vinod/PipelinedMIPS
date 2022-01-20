@@ -8,9 +8,9 @@ module writeback(input             clk, rst,
                  input      [27:0] jumpDstD,
                  input      [31:0] PCPlus4F, PCBranchD,
                  
-                 output reg        RegWriteW,
-                 output reg [4:0]  WriteRegW,
-                 output reg [31:0] ResultW, PC);
+                 output        RegWriteW,
+                 output [4:0]  WriteRegW,
+                 output [31:0] ResultW, PC);
     // Pipeline registers
     reg RegWriteW_, jumpW_;
     reg [4:0]  WriteRegW_;

@@ -50,21 +50,21 @@ module datapath(input             clk, rst,
 
                 input             stallD,
                 input             forwardAD, forwardBD,
-                output reg [1:0]  branchD,
-                output reg [4:0]  RsD, RtD,
+                output  [1:0]  branchD,
+                output  [4:0]  RsD, RtD,
                 
                 input             flushE,
                 input      [1:0]  forwardAE, forwardBE,
-                output reg       RegWriteE, MultStartE, MultDoneE,
-                output reg [2:0]  WBSrcE,
-                output reg [4:0]  RsE, RtE, WriteRegE,
+                output        RegWriteE, MultStartE, MultDoneE,
+                output  [2:0]  WBSrcE,
+                output  [4:0]  RsE, RtE, WriteRegE,
                 
-                output reg        RegWriteM,
-                output reg [2:0]  WBSrcM,
-                output reg [4:0]  WriteRegM,
+                output         RegWriteM,
+                output  [2:0]  WBSrcM,
+                output  [4:0]  WriteRegM,
                 
-                output reg        RegWriteW,
-                output reg [4:0]  WriteRegW);
+                output         RegWriteW,
+                output  [4:0]  WriteRegW);
 
     wire [31:0] PC, InstrF, PCPlus4F;
     fetch f(clk, rst, stallF, PC, InstrF, PCPlus4F);
@@ -135,13 +135,10 @@ output [27:0] jumpdstD
 );
 
 wire [31:0] instrD;
-reg [31:0] currentinstr, currentpcplus4;
 wire [1:0] clear; //0 for branch, 1 for jal
 assign clear[1] = jumpD;
 assign clear[0] = branchD[0] | branchD[1];
-fdgate fdg(clk, reset, stallD, clear, instrF, pcplus4F, currentinstr, currentpcplus4, instrD, pcplus4D);//the gate 
-
-assign {currentinstr, currentpcplus4} = {instrD, pcplus4D};
+fdgate fdg(clk, reset, stallD, clear, instrF, pcplus4F, instrD, pcplus4D);//the gate 
 
 controller c(instrD[31:26], instrD[5:0],
                multstartD, multsgnD,
@@ -181,9 +178,11 @@ endmodule
 module fdgate(  //pipeline gate between F and D
 input clk, rst, stallD,
 input [1:0] clear,
-input [31:0] instrF, pcplus4F, ci, cp,
+input [31:0] instrF, pcplus4F,
 output reg [31:0] instrD, pcplus4D
 );
+
+reg [31:0] stall_instr, stall_pcplus4D;
 
 always @ (posedge clk, posedge rst, posedge clear)
     begin
@@ -196,11 +195,13 @@ always @ (posedge clk, posedge rst, posedge clear)
             begin
               instrD <= instrF;
               pcplus4D <= pcplus4F;
+              stall_instr <= instrD;
+              stall_pcplus4D <= pcplus4D;
             end
         else 
             begin
-              instrD <= ci;
-              pcplus4D <= cp;
+              instrD <= instrD;
+              pcplus4D <= pcplus4D;
             end
     end
 
@@ -333,6 +334,16 @@ end
 
 endmodule
 
+
+//This 2:1 mux implement all the muxs in the design
+/*
+module mux2 # (parameter WIDTH = 8) //2:1MUX
+(input [WIDTH-1:0] d0, d1,
+input s,
+output [WIDTH-1:0] y);
+    assign y = s ? d1 : d0;
+endmodule
+*/
 module execute(input             clk, rst,
                // DECODE STAGE
                // Downstream control flags
@@ -347,13 +358,13 @@ module execute(input             clk, rst,
 
                // MEMORY STAGE
                // Downstream control flags
-               output reg        jumpE, RegWriteE, MemWriteE,
-               output reg [2:0]  MemtoRegE,
-               output reg [4:0]  WriteRegE,
+               output         jumpE, RegWriteE, MemWriteE,
+               output  [2:0]  MemtoRegE,
+               output  [4:0]  WriteRegE,
                // Fordwarding
                input      [31:0] ALUOutM,
                // Data
-               output reg [31:0] ALUMultOutE, WriteDataE, PCPlus4E,
+               output  [31:0] ALUMultOutE, WriteDataE, PCPlus4E,
 
                // WRITEBACK STAGE
                // Forwarding
@@ -362,8 +373,8 @@ module execute(input             clk, rst,
                // HAZARD UNIT
                input             FlushE,
                input      [1:0]  ForwardAE, ForwardBE,
-               output reg        MultStartE, MultDoneE,
-               output reg [4:0]  RsE, RtE, RdE);
+               output         MultStartE, MultDoneE,
+               output  [4:0]  RsE, RtE, RdE);
 
     // Execute Stage Registers
     reg        jumpE_, RegWriteE_, MemWriteE_, RegDstE_, MultStartE_, MultSgnE_;
@@ -414,9 +425,9 @@ module execute(input             clk, rst,
 
   	assign ALUMultOutE = MemtoRegE_[2] ? (MemtoRegE_[1] ? multOutHi : multOutLo) : ALUOut;
 
-    always @ (posedge clk) begin
+    always @ (posedge clk, posedge rst) begin
 
-            if (FlushE==1) begin
+            if (FlushE==1 || rst) begin
                 jumpE_        <= 1'b0;
                 RegWriteE_    <= 1'b0;
                 MemtoRegE_    <= 1'b0;
@@ -467,10 +478,8 @@ output [31:0] instrF, pcplus4F
 );
 
 wire [31:0] pcF;
-reg [31:0] currentPC;
 
-flopr pcreg(clk, reset, stallF, currentPC, pc, pcF);//Set for reset and update pc value
-assign currentPC = pcF;
+flopr pcreg(clk, reset, stallF, pc, pcF);//Set for reset and update pc value
 imem imem(pcF[7:2], instrF); //Instruction memory
 adder pcadd1(pcF, 32'b100, pcplus4F); //PC + 4
 
@@ -492,7 +501,7 @@ endmodule
 module imem(input   [5:0]  a,
             output  [31:0] rd);
 
-  reg [31:0] RAM[63:0];
+  reg [63:0] RAM[63:0];
 
   initial
     begin
@@ -508,16 +517,17 @@ endmodule
 //If the reset is 0, we keeps setting pc to pcnext
 module flopr //use for reset
 (input clk, reset, stallF,
-input [31:0] c,
 input [31:0] d,
 output reg [31:0] q);
+reg [31:0] prev_d;
     always @ (posedge clk, posedge reset)
         if (reset) 
             q <= 0;
-        else if(!stallF)
+        else if(!stallF) begin
             q <= d;
-        else
-            q <= c;
+            prev_d <= q;
+        end else
+            q <= prev_d;
 endmodule
 
 
@@ -525,6 +535,7 @@ module adder (input [31:0] a, b,
 output [31:0] y);
     assign y = a + b;
 endmodule
+
 //This is the hazard Unit
 
 module hazard(
@@ -641,35 +652,24 @@ module memory(input             clk, rst,
               output reg        jumpM, RegWriteM,
               output reg [2:0]  MemtoRegM,
               output reg [4:0]  WriteRegM,
-              output reg [31:0] ReadDataM, ALUMultOutM, PCPlus8M);  
+              output reg [31:0] ALUMultOutM,
+              output     [31:0] PCPlus8M, ReadDataM);  
   
-    // Pipeline registers
-    reg        jumpM_, RegWriteM_;
-    reg [2:0]  MemtoRegM_;
-    reg [4:0]  WriteRegM_;
-    reg [31:0]  WriteDataM_, PCPlus4M_;
-
-    wire [31:0] ReadDataM_;
-
-    assign jumpM      = jumpM_;
-    assign RegWriteM  = RegWriteM_;
-    assign MemtoRegM  = MemtoRegM_;
-    assign WriteRegM  = WriteRegM_;
+    reg [31:0]  WriteDataM, PCPlus4M_;
 
     assign PCPlus8M = PCPlus4M_ + 4;
-  	data_memory dm(.clk(clk), .WE(MemWriteE), .A(ALUMultOutE), .WD(WriteDataM_), .RD(ReadDataM_));
 
-    assign ReadDataM = ReadDataM_;
+  	data_memory dm(.clk(clk), .WE(MemWriteE), .A(ALUMultOutE), .WD(WriteDataM), .RD(ReadDataM));
     
     always @ (posedge clk or posedge rst) begin
 
-            jumpM_     <= jumpE;
-            RegWriteM_ <= RegWriteE;
-            MemtoRegM_ <= MemtoRegE;
+            jumpM     <= jumpE;
+            RegWriteM <= RegWriteE;
+            MemtoRegM <= MemtoRegE;
 
             ALUMultOutM <= ALUMultOutE;
-            WriteDataM_  <= WriteDataE;
-            WriteRegM_   <= WriteRegE;
+            WriteDataM  <= WriteDataE;
+            WriteRegM   <= WriteRegE;
             PCPlus4M_    <= PCPlus4E;
 
     end
@@ -712,15 +712,12 @@ module multiplier (input             clk, rst,
                    output reg        completed);
   	reg  [5:0]  counter;
 
-  	reg  [31:0] A, B, C;
   	reg  [63:0] product, invertpro;
     wire [31:0] ta,tb;
 
     // Twos complement to convert negative to positive values
     assign ta = SrcAE[31] ? (~SrcAE + 1) : SrcAE;
     assign tb = SrcBE[31] ? (~SrcBE + 1) : SrcBE;
-
-  	assign C = ALUOut;
 
   	always @ (posedge clk or posedge rst) begin
         if (rst) begin
@@ -800,9 +797,9 @@ module writeback(input             clk, rst,
                  input      [27:0] jumpDstD,
                  input      [31:0] PCPlus4F, PCBranchD,
                  
-                 output reg        RegWriteW,
-                 output reg [4:0]  WriteRegW,
-                 output reg [31:0] ResultW, PC);
+                 output        RegWriteW,
+                 output [4:0]  WriteRegW,
+                 output [31:0] ResultW, PC);
     // Pipeline registers
     reg RegWriteW_, jumpW_;
     reg [4:0]  WriteRegW_;

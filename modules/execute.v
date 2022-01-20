@@ -12,13 +12,13 @@ module execute(input             clk, rst,
 
                // MEMORY STAGE
                // Downstream control flags
-               output reg        jumpE, RegWriteE, MemWriteE,
-               output reg [2:0]  MemtoRegE,
-               output reg [4:0]  WriteRegE,
+               output         jumpE, RegWriteE, MemWriteE,
+               output  [2:0]  MemtoRegE,
+               output  [4:0]  WriteRegE,
                // Fordwarding
                input      [31:0] ALUOutM,
                // Data
-               output reg [31:0] ALUMultOutE, WriteDataE, PCPlus4E,
+               output  [31:0] ALUMultOutE, WriteDataE, PCPlus4E,
 
                // WRITEBACK STAGE
                // Forwarding
@@ -27,8 +27,8 @@ module execute(input             clk, rst,
                // HAZARD UNIT
                input             FlushE,
                input      [1:0]  ForwardAE, ForwardBE,
-               output reg        MultStartE, MultDoneE,
-               output reg [4:0]  RsE, RtE, RdE);
+               output         MultStartE, MultDoneE,
+               output  [4:0]  RsE, RtE, RdE);
 
     // Execute Stage Registers
     reg        jumpE_, RegWriteE_, MemWriteE_, RegDstE_, MultStartE_, MultSgnE_;
@@ -79,9 +79,9 @@ module execute(input             clk, rst,
 
   	assign ALUMultOutE = MemtoRegE_[2] ? (MemtoRegE_[1] ? multOutHi : multOutLo) : ALUOut;
 
-    always @ (posedge clk) begin
+    always @ (posedge clk, posedge rst) begin
 
-            if (FlushE==1) begin
+            if (FlushE==1 || rst) begin
                 jumpE_        <= 1'b0;
                 RegWriteE_    <= 1'b0;
                 MemtoRegE_    <= 1'b0;

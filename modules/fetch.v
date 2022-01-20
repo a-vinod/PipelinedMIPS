@@ -7,10 +7,8 @@ output [31:0] instrF, pcplus4F
 );
 
 wire [31:0] pcF;
-reg [31:0] currentPC;
 
-flopr pcreg(clk, reset, stallF, currentPC, pc, pcF);//Set for reset and update pc value
-assign currentPC = pcF;
+flopr pcreg(clk, reset, stallF, pc, pcF);//Set for reset and update pc value
 imem imem(pcF[7:2], instrF); //Instruction memory
 adder pcadd1(pcF, 32'b100, pcplus4F); //PC + 4
 
@@ -30,7 +28,7 @@ endmodule
 module imem(input   [5:0]  a,
             output  [31:0] rd);
 
-  reg [31:0] RAM[63:0];
+  reg [63:0] RAM[63:0];
 
   initial
     begin
@@ -45,16 +43,17 @@ endmodule
 //If the reset is 0, we keeps setting pc to pcnext
 module flopr //use for reset
 (input clk, reset, stallF,
-input [31:0] c,
 input [31:0] d,
 output reg [31:0] q);
+reg [31:0] prev_d;
     always @ (posedge clk, posedge reset)
         if (reset) 
             q <= 0;
-        else if(!stallF)
+        else if(!stallF) begin
             q <= d;
-        else
-            q <= c;
+            prev_d <= q;
+        end else
+            q <= prev_d;
 endmodule
 
 module adder (input [31:0] a, b,
