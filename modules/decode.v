@@ -23,7 +23,7 @@ reg [31:0] currentinstr, currentpcplus4;
 wire [1:0] clear; //0 for branch, 1 for jal
 assign clear[1] = jumpD;
 assign clear[0] = branchD[0] | branchD[1];
-fdgate fdg(clk, stallD, clear, instrF, pcplus4F, currentinstr, currentpcplus4, instrD, pcplus4D);//the gate 
+fdgate fdg(clk, reset, stallD, clear, instrF, pcplus4F, currentinstr, currentpcplus4, instrD, pcplus4D);//the gate 
 
 assign {currentinstr, currentpcplus4} = {instrD, pcplus4D};
 
@@ -62,15 +62,15 @@ assign jumpdstD =  instrD[25:0] << 2;
 endmodule
 
 module fdgate(  //pipeline gate between F and D
-input clk, stallD,
+input clk, rst, stallD,
 input [1:0] clear,
 input [31:0] instrF, pcplus4F, ci, cp,
 output reg [31:0] instrD, pcplus4D
 );
 
-always @ (posedge clk, posedge clear)
+always @ (posedge clk, posedge rst, posedge clear)
     begin
-        if(clear!=2'b00)
+        if(clear!=2'b00 || rst)
             begin
               instrD <= 0;
               pcplus4D <= 0;
@@ -109,6 +109,7 @@ begin
     if(opD==6'b000000) //R-type
         begin
             case(functD)
+                6'b000000: controls <= 16'b0000000000000000; //nop
                 6'b100000: controls <= 16'b1010001000100000; //add
                 6'b100010: controls <= 16'b1010010100100000; //subtract
                 6'b100100: controls <= 16'b1010000000100000; //and
