@@ -48,7 +48,8 @@ module datapath(input             clk, rst,
     wire [2:0]  WBSrcM_;
     wire [4:0]  WriteRegM_;
     wire [31:0] ReadDataM, PCPlus8M;
-    memory m(clk, rst, jumpE, RegWriteE_, MemWriteE, WBSrcE_[2:0], WriteRegE_, ALUMultOutE, WriteDataE, PCPlus4E, jumpM, RegWriteM_, WBSrcM_[2:0], WriteRegM_, ReadDataM, ALUMultOutM, PCPlus8M);
+    memory m(clk, rst, jumpE, RegWriteE_, MemWriteE, WBSrcE_[2:0], WriteRegE_, ALUMultOutE, WriteDataE, PCPlus4E, jumpM, RegWriteM_, WBSrcM_[2:0], WriteRegM_, ALUMultOutM, ReadDataM, PCPlus8M);
+
 
     writeback w(clk, rst, jumpM, RegWriteM_, WBSrcM_[2:0], WriteRegM_, ReadDataM, ALUMultOutM, PCPlus8M, pcsrcD, jumpD, jumpdstD, PCPlus4F, pcbranchD, RegWriteW_, writeregW, resultW, PC);
 
@@ -66,3 +67,4 @@ module datapath(input             clk, rst,
     assign WriteRegW  = writeregW;
 
 endmodule
+

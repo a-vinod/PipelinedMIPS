@@ -28,7 +28,7 @@ module execute(input             clk, rst,
                input             FlushE,
                input      [1:0]  ForwardAE, ForwardBE,
                output         MultStartE, MultDoneE,
-               output  [4:0]  RsE, RtE, RdE);
+               output       [4:0]  RsE, RtE, RdE);
 
     // Execute Stage Registers
     reg        jumpE_, RegWriteE_, MemWriteE_, RegDstE_, MultStartE_, MultSgnE_;
@@ -122,3 +122,4 @@ module execute(input             clk, rst,
 
     
 endmodule
+
