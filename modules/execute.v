@@ -60,7 +60,7 @@ module execute(input             clk, rst,
     wire zero;
   	assign SrcAE     = ForwardAE[1] ? (ALUOutM)       : (ForwardAE[0] ? (ResultW)   : (rd1E_));
   	assign SrcBE_tmp = ForwardBE[1] ? (ALUOutM)       : (ForwardBE[0] ? (ResultW)   : (rd2E_));
-  	assign SrcBE     = ALUSrcE_[1]  ? (UnsignedImmE_)   : (ALUSrcE_[0]  ? (SignImmE_) : (SrcBE_tmp));
+  	assign SrcBE     = ALUSrcE_[1]  ? (UnsignedImmE_) : (ALUSrcE_[0]  ? (SignImmE_) : (SrcBE_tmp));
     // MUX to select ALU inputs from multiplier or from register
     assign ALU_a     = MultStartE_   ? ALU_a_mult : SrcAE;
     assign ALU_b     = MultStartE_   ? ALU_b_mult : SrcBE;

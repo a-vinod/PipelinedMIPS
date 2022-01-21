@@ -78,13 +78,13 @@ always @ (posedge clk, posedge rst, posedge clear)
             begin
               instrD <= instrF;
               pcplus4D <= pcplus4F;
-              stall_instr <= instrD;
-              stall_pcplus4D <= pcplus4D;
+              stall_instr <= instrF;
+              stall_pcplus4D <= pcplus4F;
             end
-        else 
+        else if (stallD)
             begin
-              instrD <= instrD;
-              pcplus4D <= pcplus4D;
+              instrD <= stall_instr;
+              pcplus4D <= stall_pcplus4D;
             end
     end
 
@@ -218,3 +218,4 @@ input s,
 output [WIDTH-1:0] y);
     assign y = s ? d1 : d0;
 endmodule*/
+

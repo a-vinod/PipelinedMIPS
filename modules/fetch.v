@@ -51,7 +51,7 @@ reg [31:0] prev_d;
             q <= 0;
         else if(!stallF) begin
             q <= d;
-            prev_d <= q;
+            prev_d <= d;
         end else
             q <= prev_d;
 endmodule
@@ -60,3 +60,4 @@ module adder (input [31:0] a, b,
 output [31:0] y);
     assign y = a + b;
 endmodule
+
