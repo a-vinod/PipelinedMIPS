@@ -350,7 +350,7 @@ module execute(input             clk, rst,
                // MEMORY STAGE
                // Downstream control flags
                output         jumpE, RegWriteE, MemWriteE,
-               output  [2:0]  MemtoRegE,
+               output  reg [2:0]  MemtoRegE,
                output  [4:0]  WriteRegE,
                // Fordwarding
                input      [31:0] ALUOutM,
@@ -363,22 +363,23 @@ module execute(input             clk, rst,
 
                // HAZARD UNIT
                input             FlushE,
-               input      [1:0]  ForwardAE, ForwardBE,
+               input        [1:0]  ForwardAE, ForwardBE,
                output         MultStartE, MultDoneE,
                output       [4:0]  RsE, RtE, RdE);
 
     // Execute Stage Registers
     reg        jumpE_, RegWriteE_, MemWriteE_, RegDstE_, MultStartE_, MultSgnE_;
   	reg [1:0]  ALUSrcE_; 
-    reg [2:0]  ALUControlE_, MemtoRegE_;
+    reg [2:0]  ALUControlE_;
+    wire [2:0] MemtoRegE_;
     reg [4:0]  RsE_, RtE_, RdE_;
     reg [31:0] rd1E_, rd2E_, UnsignedImmE_, SignImmE_, PCPlus4E_; 
 
     // Downstream pipeline control flags
-    assign jumpE       = jumpE_;
-    assign RegWriteE   = RegWriteE_;
-    assign MemWriteE   = MemWriteE_;
-    assign MemtoRegE   = MemtoRegE_;
+    assign jumpE       = FlushE ? 1'b0 : jumpE_;
+    assign RegWriteE   = FlushE ? 1'b0 : RegWriteE_;
+    assign MemWriteE   = FlushE ? 1'b0 : MemWriteE_;
+    assign MemtoRegE_  = FlushE ? 3'b010 : MemtoRegD;
 
     // Hazard Unit
     assign RsE = RsE_;
@@ -388,7 +389,7 @@ module execute(input             clk, rst,
 
     assign MultStartE = MultStartE_;
 
-    assign WriteRegE  = RegDstE_     ? (RdE) : (RtE);
+    assign WriteRegE  = FlushE ? 5'b0 :(RegDstE_     ? (RdE) : (RtE));
   	assign WriteDataE = ForwardBE[1] ? (ALUOutM) : (ForwardBE[0] ? (ResultW) : (rd2E_));
 
     // SrcA and SrcB selection for ALU/multiplier
@@ -414,14 +415,13 @@ module execute(input             clk, rst,
 
     assign MultDoneE = MultDoneE_;
 
-  	assign ALUMultOutE = MemtoRegE_[2] ? (MemtoRegE_[1] ? multOutHi : multOutLo) : ALUOut;
+  	assign ALUMultOutE = FlushE ? 32'b0 : (MemtoRegD[2] ? (MemtoRegD[1] ? multOutHi : multOutLo) : ALUOut);
 
     always @ (posedge clk, posedge rst) begin
-
-            if (FlushE==1 || rst) begin
+            MemtoRegE <= MemtoRegE_;
+            if (rst) begin
                 jumpE_        <= 1'b0;
                 RegWriteE_    <= 1'b0;
-                MemtoRegE_    <= 1'b0;
                 MemWriteE_    <= 2'b0;
                 RegDstE_      <= 1'b0;
                 MultStartE_   <= 1'b0;
@@ -439,7 +439,6 @@ module execute(input             clk, rst,
             end else begin
                 jumpE_        <= jumpD;
                 RegWriteE_    <= RegWriteD;
-                MemtoRegE_    <= MemtoRegD;
                 MemWriteE_    <= MemWriteD;
                 RegDstE_      <= RegDstD;
                 MultStartE_   <= MultStartD;
@@ -459,6 +458,7 @@ module execute(input             clk, rst,
 
     
 endmodule
+
 
 //Stage Fetch
 
@@ -638,26 +638,28 @@ endmodulemodule memory(input             clk, rst,
               output reg [2:0]  MemtoRegM,
               output reg [4:0]  WriteRegM,
               output reg [31:0] ALUMultOutM,
-              output reg [31:0] ReadDataM,
+              output     [31:0] ReadDataM,
               output     [31:0] PCPlus8M);  
   
-    reg [31:0]  WriteDataM, PCPlus4M_;
+    reg         MemWriteM;
+    reg  [31:0] WriteDataM, PCPlus4M_;
     wire [31:0] ReadDataM_;
 
     assign PCPlus8M = PCPlus4M_ + 4;
 
-  	data_memory dm(.clk(clk), .WE(MemWriteE), .A(ALUMultOutE), .WD(WriteDataE), .RD(ReadDataM_));
+  	data_memory dm(.clk(clk), .WE(MemWriteM), .A(ALUMultOutM), .WD(WriteDataM), .RD(ReadDataM));
     
     always @ (posedge clk) begin
 
             jumpM     <= jumpE;
             RegWriteM <= RegWriteE;
             MemtoRegM <= MemtoRegE;
+            MemWriteM <= MemWriteE;
+            WriteDataM <= WriteDataE;
 
             ALUMultOutM  <= ALUMultOutE;
             WriteRegM    <= WriteRegE;
             PCPlus4M_    <= PCPlus4E;
-            ReadDataM    <= ReadDataM_;
 
     end
 
@@ -770,13 +772,22 @@ module writeback(input             clk, rst,
                  
                  output reg        RegWriteW,
                  output reg [4:0]  WriteRegW,
-				 output reg [31:0] ResultW,
+				 output     [31:0] ResultW,
                  output     [31:0] PC);
 
     assign PC = jumpD ? ({PCPlus4F[31:28], jumpDstD}) : (PCSrcD ? (PCBranchD) : (PCPlus4F));
+    reg        jumpW;
+    reg [2:0]  MemtoRegW;
+    reg [31:0] ReadDataW, ALUMultOutW;
+
+    assign ResultW = MemtoRegW[1] ? (MemtoRegW[0] ? (ReadDataW) : (ALUMultOutW)) : (PCPlus8M); 
     always @ (posedge clk) begin
-        ResultW <= MemtoRegM[1] ? (MemtoRegM[0] ? (ReadDataM) : (ALUMultOutM)) : (PCPlus8M); 
+        MemtoRegW <= MemtoRegM;
+        ReadDataW <= ReadDataM;
+        ALUMultOutW <= ALUMultOutM;
         RegWriteW <= RegWriteM;
+        jumpW <= jumpM;
+
         WriteRegW <= jumpM     ?  (5'b11111) : (WriteRegM);
     end
 
