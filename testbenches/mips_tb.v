@@ -7,13 +7,19 @@ module mips_tb;
   	mips m(clk, rst);
   
     initial begin
-      rst <= 1; # 12; rst <= 0;
-    end
-
-      always
-    begin
+      $dumpfile("dump.vcd");
+      $dumpvars;
+      clk = 1;
+      rst <= 1;
+      #5;
+      clk <= 0; 
+      rst <= 0;
+      #5;
+      
+      for (i = 0; i < 100; i = i  + 1) begin
       clk <= 1; # 5;
       clk <= 0; # 5;
+    end
     end
 
 endmodule
