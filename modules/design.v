@@ -271,7 +271,7 @@ input [31:0] wd3,
 output [31:0] rd1, rd2);
 
     reg [31:0] rf[31:0];
-    always @ (posedge clk)
+    always @ (negedge clk)
         if (we3==1) 
             rf[wa3] <= wd3;
     
