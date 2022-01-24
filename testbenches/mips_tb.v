@@ -16,7 +16,8 @@ module mips_tb;
       rst <= 0;
       #5;
       
-      for (i = 0; i < 100; i = i  + 1) begin
+      // change upper bound to adjust number of cycles
+      for (i = 0; i < 250; i = i  + 1) begin
       clk <= 1; # 5;
       clk <= 0; # 5;
     end

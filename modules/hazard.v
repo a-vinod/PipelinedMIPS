@@ -2,7 +2,7 @@
 
 module hazard(
     input [1:0] branchD,
-    input [2:0] wbsrcE, wbsrcM,
+    input [3:0] wbsrcE, wbsrcM,
     input regwriteE, regwriteM, regwriteW, 
     input multstartE, pve,
     input [4:0] rtD, rsD, rsE, rtE, writeregE, writeregW, writeregM,
@@ -15,6 +15,7 @@ module hazard(
     stall st(branchD, wbsrcE, wbsrcM,regwriteE, regwriteM, regwriteW,rtD, rsD, rsE, rtE, writeregE, writeregW, writeregM,multstartE, pve, stallF, stallD, flushE);
 
 endmodule
+
 
 module forward(
     input [4:0] rtD, rsD, rsE, rtE, writeregE, writeregW, writeregM,
@@ -50,9 +51,10 @@ begin
 end
 endmodule
 
+
 module stall(
     input [1:0] branchD,
-    input [2:0] wbsrcE, wbsrcM,
+    input [3:0] wbsrcE, wbsrcM,
     input regwriteE, regwriteM, regwriteW,
     input [4:0] rtD, rsD, rsE, rtE, writeregE, writeregW, writeregM,
     input multstartE, pve,
@@ -68,21 +70,21 @@ begin
     stallD <= 0;
     flushE <= 0;
 
-    if(((rsD == rtE) || (rtE == rtD)) && (wbsrcE == 3'b011)) //lw
+    if(((rsD == rtE) || (rtE == rtD)) && (wbsrcE == 4'b1111)) //lw
     begin
         stallF <= 1;
         stallD <= 1;
         flushE <= 1;
     end
 
-    if((branchD!=2'b00) && ((regwriteE && ((rsD == writeregE) || (rtD == writeregE))) || ((wbsrcM == 3'b011) && ((rsD == writeregM) || (rtD == writeregM))))) //branch
+    if((branchD!=2'b00) && ((regwriteE && ((rsD == writeregE) || (rtD == writeregE))) || ((wbsrcM == 4'b1110) && ((rsD == writeregM) || (rtD == writeregM))))) //branch
     begin
         stallF <= 1;
         stallD <= 1;
         flushE <= 1;
     end
 
-    if((multplier == 0) && (multstartE == 1)) //start multplication
+    if((multstartE == 1)) //start multplication
     begin
         stallF <= 1;
         stallD <= 1;
@@ -99,8 +101,11 @@ begin
 
     if((multplier == 1) && (pve == 1) && (multstartE != 1)) //end multplication
     begin
-        multplier <= 1;
+        multplier <= 0;
     end
     
 end
 endmodule
+
+
+

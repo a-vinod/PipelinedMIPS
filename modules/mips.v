@@ -9,11 +9,11 @@ module mips(input clk, rst);
     wire        flushE;
     wire [1:0]  forwardAE, forwardBE;
     wire        RegWriteE, MultStartE, MultDoneE;
-    wire [2:0]  WBSrcE;
+    wire [3:0]  WBSrcE;
     wire [4:0]  RsE, RtE, WriteRegE;
     
     wire        RegWriteM;
-    wire [2:0]  WBSrcM;
+    wire [3:0]  WBSrcM;
     wire [4:0]  WriteRegM;
 
     wire        RegWriteW;
@@ -22,3 +22,4 @@ module mips(input clk, rst);
 
     hazard hz(branchD, WBSrcE, WBSrcM, RegWriteE, RegWriteM, RegWriteW, MultStartE, MultDoneE, RtD, RsD, RsE, RtE, WriteRegE, WriteRegW, WriteRegM, stallF, stallD, flushE, forwardAD, forwardBD, forwardAE, forwardBE);
 endmodule
+

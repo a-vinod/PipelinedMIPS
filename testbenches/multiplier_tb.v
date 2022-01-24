@@ -22,6 +22,7 @@ module multiplier_tb;
     
     MultSgn = 0;
     MultE = 1;
+    // replace these values for testing 
     SrcAE = 6'b110011;
     SrcBE = 6'b110011;
     

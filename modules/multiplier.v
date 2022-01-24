@@ -9,8 +9,11 @@ module multiplier (input             clk, rst,
                    output reg        completed);
   	reg  [5:0]  counter;
 
-  	reg  [63:0] product, invertpro;
+		wire [63:0] invertpro;
+  	reg  [63:0] product;
+		assign invertpro = ~(product-1);
     wire [31:0] ta,tb;
+		reg  [31:0] srca, srcb;
     reg  multsgn;
 
     // Twos complement to convert negative to positive values
@@ -25,6 +28,7 @@ module multiplier (input             clk, rst,
             counter   <= 0;
           	completed <= 0;
         end else if (MultE && !MultSgn) begin // Start unsigned multiply
+						completed <= 0;
             multsgn <= 0;
             counter <= counter + 1;
 
@@ -32,9 +36,12 @@ module multiplier (input             clk, rst,
             ALU_A   <= (SrcAE[0] ? (SrcBE >> 1) : (32'b0));
             ALU_B   <= SrcBE;
         end else if (MultE && MultSgn) begin // Start signed multiply
+						completed <= 0;
             multsgn <= 1;
             counter <= counter + 1;
-
+			
+						srca <= SrcAE;
+						srcb <= SrcBE;
             product <= {ta[0] ? (tb) : (32'b0), ta} >> 1;
             ALU_A   <= (ta[0] ? (tb >> 1) : (32'b0));
             ALU_B   <= tb;
@@ -49,9 +56,9 @@ module multiplier (input             clk, rst,
 
                 product <= {product[0] ? (ALUOut) : product[63:32] , product[31:0]} >> 1;
             end else if (counter == 32) begin
+								counter <= 0;
                 if (multsgn) begin
-                    invertpro <= ~(product-1);
-                    if((SrcAE[31] & SrcBE[31]) || (~SrcAE[31] & ~SrcBE[31])) begin //positive
+                    if((srca[31] & srcb[31]) || (~srca[31] & ~srcb[31])) begin //positive
                         completed <= 1;
                         hi <= product[63:32];
                         lo <= product[31:0];

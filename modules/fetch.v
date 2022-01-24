@@ -1,3 +1,4 @@
+
 //Stage Fetch
 
 module fetch(
@@ -6,13 +7,23 @@ input [31:0] pc,
 output [31:0] instrF, pcplus4F
 );
 
-wire [31:0] pcF;
+reg [31:0] pcF, stall_pcF;
+wire [31:0] pcF_;
 
-flopr pcreg(clk, reset, stallF, pc, pcF);//Set for reset and update pc value
+//flopr pcreg(clk, reset, stallF, pc, pcF);//Set for reset and update pc value
 imem imem(pcF[7:2], instrF); //Instruction memory
 adder pcadd1(pcF, 32'b100, pcplus4F); //PC + 4
 
+	always @ (posedge clk, posedge reset) begin
+		if (reset) begin
+			pcF <= 32'b0;
+		end else if (!stallF) begin
+			pcF <= pc;
+		end
+	end
+
 endmodule
+
 
 //This 2:1 mux implement all the muxs in the design
 module mux2 # (parameter WIDTH = 8) //2:1MUX
@@ -24,6 +35,7 @@ output [WIDTH-1:0] y);
 
 endmodule
 
+
 // Instruction memory
 module imem(input   [5:0]  a,
             output  [31:0] rd);
@@ -32,11 +44,13 @@ module imem(input   [5:0]  a,
 
   initial
     begin
-      $readmemh("tb1.dat",RAM); // initialize memory with test program. Change this with memfile2.dat for the modified code
+      // Change file name to match program file name
+      $readmemh("grader.dat",RAM); // initialize memory with test program. Change this with memfile2.dat for the modified code
     end
 
   assign rd = RAM[a]; // word aligned
 endmodule
+
 
 //flopr is the module controling the PC
 //If reset signal is 1, the address is reset to 1
@@ -56,9 +70,8 @@ reg [31:0] prev_d;
             q <= prev_d;
 endmodule
 
+
 module adder (input [31:0] a, b,
 output [31:0] y);
     assign y = a + b;
 endmodule
-
-

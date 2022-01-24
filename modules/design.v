@@ -31,6 +31,7 @@ module ALU (input [31:0] a, b, input [2:0] f, output reg [31:0] y, output zero);
     assign zero = (y == 0) ;
    
 endmodule
+
 module data_memory(input             clk, WE,
                    input      [31:0] A, WD,
                    output reg [31:0] RD);
@@ -43,6 +44,7 @@ module data_memory(input             clk, WE,
     endcase
   end
 endmodule
+
 module datapath(input             clk, rst, 
                                   stallF, 
 
@@ -93,8 +95,7 @@ module datapath(input             clk, rst,
     wire [2:0]  WBSrcM_;
     wire [4:0]  WriteRegM_;
     wire [31:0] ReadDataM, PCPlus8M;
-    memory m(clk, rst, jumpE, RegWriteE_, MemWriteE, WBSrcE_[2:0], WriteRegE_, ALUMultOutE, WriteDataE, PCPlus4E, jumpM, RegWriteM_, WBSrcM_[2:0], WriteRegM_, ALUMultOutM, ReadDataM, PCPlus8M);
-
+    memory m(clk, rst, jumpE, RegWriteE_, MemWriteE, WBSrcE_[2:0], WriteRegE_, ALUMultOutE, WriteDataE, PCPlus4E, jumpM, RegWriteM_, WBSrcM_[2:0], WriteRegM_, ReadDataM, ALUMultOutM, PCPlus8M);
 
     writeback w(clk, rst, jumpM, RegWriteM_, WBSrcM_[2:0], WriteRegM_, ReadDataM, ALUMultOutM, PCPlus8M, pcsrcD, jumpD, jumpdstD, PCPlus4F, pcbranchD, RegWriteW_, writeregW, resultW, PC);
 
@@ -173,6 +174,7 @@ assign jumpdstD =  instrD[25:0] << 2;
 
 endmodule
 
+
 module fdgate(  //pipeline gate between F and D
 input clk, rst, stallD,
 input [1:0] clear,
@@ -204,6 +206,7 @@ always @ (posedge clk, posedge rst, posedge clear)
     end
 
 endmodule
+
 
 
 module controller(input   [5:0] opD, functD,
@@ -259,6 +262,7 @@ begin
 end
 endmodule
 
+
 //This is the regfile that keeps track of the registers
 //a1 is the  read port
 //a2 is the bits of the instruction 
@@ -271,7 +275,7 @@ input [31:0] wd3,
 output [31:0] rd1, rd2);
 
     reg [31:0] rf[31:0];
-    always @ (negedge clk)
+    always @ (posedge clk)
         if (we3==1) 
             rf[wa3] <= wd3;
     
@@ -279,12 +283,14 @@ output [31:0] rd1, rd2);
     assign rd2 = (a2 != 0) ? rf[a2] : 0;
 endmodule
 
+
 //this module extend the 16bits input to 32 bits
 // which is used in lw instruction.
 module signext (input [15:0] a, //signExtension
 output [31:0] y);
     assign y = {{16{a[15]}}, a};
 endmodule
+
 
 //unsign for ori
 module unsignext (input [15:0] a, //signExtension
@@ -294,10 +300,12 @@ output [31:0] y);
     assign y = {{16{e}}, a};
 endmodule
 
+
 module adderD (input [31:0] a, b,
 output [31:0] y);
     assign y = a + b;
 endmodule
+
 
 //This module shift input signal two bits to the left
 // which is how we implement PC′ = PC + 4 + SignImm × 4 in beq
@@ -306,6 +314,7 @@ output [31:0] y);
 // shift left by 2
     assign y = a<<2;
 endmodule
+
 
 module branchComparison (  //branch comparasion
 input [31:0] SRCA, SRCB,
@@ -325,6 +334,7 @@ end
 
 endmodule
 
+
 //This 2:1 mux implement all the muxs in the design
 /*
 module mux2 # (parameter WIDTH = 8) //2:1MUX
@@ -332,8 +342,8 @@ module mux2 # (parameter WIDTH = 8) //2:1MUX
 input s,
 output [WIDTH-1:0] y);
     assign y = s ? d1 : d0;
-endmodule*/
-
+endmodule
+*/
 
 module execute(input             clk, rst,
                // DECODE STAGE
@@ -350,7 +360,7 @@ module execute(input             clk, rst,
                // MEMORY STAGE
                // Downstream control flags
                output         jumpE, RegWriteE, MemWriteE,
-               output  reg [2:0]  MemtoRegE,
+               output  [2:0]  MemtoRegE,
                output  [4:0]  WriteRegE,
                // Fordwarding
                input      [31:0] ALUOutM,
@@ -363,23 +373,22 @@ module execute(input             clk, rst,
 
                // HAZARD UNIT
                input             FlushE,
-               input        [1:0]  ForwardAE, ForwardBE,
+               input      [1:0]  ForwardAE, ForwardBE,
                output         MultStartE, MultDoneE,
-               output       [4:0]  RsE, RtE, RdE);
+               output  [4:0]  RsE, RtE, RdE);
 
     // Execute Stage Registers
     reg        jumpE_, RegWriteE_, MemWriteE_, RegDstE_, MultStartE_, MultSgnE_;
   	reg [1:0]  ALUSrcE_; 
-    reg [2:0]  ALUControlE_;
-    wire [2:0] MemtoRegE_;
+    reg [2:0]  ALUControlE_, MemtoRegE_;
     reg [4:0]  RsE_, RtE_, RdE_;
     reg [31:0] rd1E_, rd2E_, UnsignedImmE_, SignImmE_, PCPlus4E_; 
 
     // Downstream pipeline control flags
-    assign jumpE       = FlushE ? 1'b0 : jumpE_;
-    assign RegWriteE   = FlushE ? 1'b0 : RegWriteE_;
-    assign MemWriteE   = FlushE ? 1'b0 : MemWriteE_;
-    assign MemtoRegE_  = FlushE ? 3'b010 : MemtoRegD;
+    assign jumpE       = jumpE_;
+    assign RegWriteE   = RegWriteE_;
+    assign MemWriteE   = MemWriteE_;
+    assign MemtoRegE   = MemtoRegE_;
 
     // Hazard Unit
     assign RsE = RsE_;
@@ -389,7 +398,7 @@ module execute(input             clk, rst,
 
     assign MultStartE = MultStartE_;
 
-    assign WriteRegE  = FlushE ? 5'b0 :(RegDstE_     ? (RdE) : (RtE));
+    assign WriteRegE  = RegDstE_     ? (RdE) : (RtE);
   	assign WriteDataE = ForwardBE[1] ? (ALUOutM) : (ForwardBE[0] ? (ResultW) : (rd2E_));
 
     // SrcA and SrcB selection for ALU/multiplier
@@ -415,13 +424,14 @@ module execute(input             clk, rst,
 
     assign MultDoneE = MultDoneE_;
 
-  	assign ALUMultOutE = FlushE ? 32'b0 : (MemtoRegD[2] ? (MemtoRegD[1] ? multOutHi : multOutLo) : ALUOut);
+  	assign ALUMultOutE = MemtoRegE_[2] ? (MemtoRegE_[1] ? multOutHi : multOutLo) : ALUOut;
 
     always @ (posedge clk, posedge rst) begin
-            MemtoRegE <= MemtoRegE_;
-            if (rst) begin
+
+            if (FlushE==1 || rst) begin
                 jumpE_        <= 1'b0;
                 RegWriteE_    <= 1'b0;
+                MemtoRegE_    <= 1'b0;
                 MemWriteE_    <= 2'b0;
                 RegDstE_      <= 1'b0;
                 MultStartE_   <= 1'b0;
@@ -439,6 +449,7 @@ module execute(input             clk, rst,
             end else begin
                 jumpE_        <= jumpD;
                 RegWriteE_    <= RegWriteD;
+                MemtoRegE_    <= MemtoRegD;
                 MemWriteE_    <= MemWriteD;
                 RegDstE_      <= RegDstD;
                 MultStartE_   <= MultStartD;
@@ -459,7 +470,6 @@ module execute(input             clk, rst,
     
 endmodule
 
-
 //Stage Fetch
 
 module fetch(
@@ -476,6 +486,7 @@ adder pcadd1(pcF, 32'b100, pcplus4F); //PC + 4
 
 endmodule
 
+
 //This 2:1 mux implement all the muxs in the design
 module mux2 # (parameter WIDTH = 8) //2:1MUX
 (input [WIDTH-1:0] d0, d1,
@@ -485,6 +496,7 @@ output [WIDTH-1:0] y);
     assign y = s ? d1 : d0;
 
 endmodule
+
 
 // Instruction memory
 module imem(input   [5:0]  a,
@@ -499,6 +511,7 @@ module imem(input   [5:0]  a,
 
   assign rd = RAM[a]; // word aligned
 endmodule
+
 
 //flopr is the module controling the PC
 //If reset signal is 1, the address is reset to 1
@@ -517,6 +530,7 @@ reg [31:0] prev_d;
         end else
             q <= prev_d;
 endmodule
+
 
 module adder (input [31:0] a, b,
 output [31:0] y);
@@ -541,6 +555,7 @@ module hazard(
     stall st(branchD, wbsrcE, wbsrcM,regwriteE, regwriteM, regwriteW,rtD, rsD, rsE, rtE, writeregE, writeregW, writeregM,multstartE, pve, stallF, stallD, flushE);
 
 endmodule
+
 
 module forward(
     input [4:0] rtD, rsD, rsE, rtE, writeregE, writeregW, writeregM,
@@ -575,6 +590,7 @@ begin
         forwardBD <= 0;
 end
 endmodule
+
 
 module stall(
     input [1:0] branchD,
@@ -629,7 +645,8 @@ begin
     end
     
 end
-endmodulemodule memory(input             clk, rst,
+endmodule
+module memory(input             clk, rst,
                                 jumpE, RegWriteE, MemWriteE,
               input      [2:0]  MemtoRegE,
               input      [4:0]  WriteRegE,
@@ -638,32 +655,29 @@ endmodulemodule memory(input             clk, rst,
               output reg [2:0]  MemtoRegM,
               output reg [4:0]  WriteRegM,
               output reg [31:0] ALUMultOutM,
-              output     [31:0] ReadDataM,
-              output     [31:0] PCPlus8M);  
+              output     [31:0] PCPlus8M, ReadDataM);  
   
-    reg         MemWriteM;
-    reg  [31:0] WriteDataM, PCPlus4M_;
-    wire [31:0] ReadDataM_;
+    reg [31:0]  WriteDataM, PCPlus4M_;
 
     assign PCPlus8M = PCPlus4M_ + 4;
 
-  	data_memory dm(.clk(clk), .WE(MemWriteM), .A(ALUMultOutM), .WD(WriteDataM), .RD(ReadDataM));
+  	data_memory dm(.clk(clk), .WE(MemWriteE), .A(ALUMultOutE), .WD(WriteDataM), .RD(ReadDataM));
     
-    always @ (posedge clk) begin
+    always @ (posedge clk or posedge rst) begin
 
             jumpM     <= jumpE;
             RegWriteM <= RegWriteE;
             MemtoRegM <= MemtoRegE;
-            MemWriteM <= MemWriteE;
-            WriteDataM <= WriteDataE;
 
-            ALUMultOutM  <= ALUMultOutE;
-            WriteRegM    <= WriteRegE;
+            ALUMultOutM <= ALUMultOutE;
+            WriteDataM  <= WriteDataE;
+            WriteRegM   <= WriteRegE;
             PCPlus4M_    <= PCPlus4E;
 
     end
 
 endmodule
+
 module mips(input clk, rst);
     wire stallF;
 
@@ -688,6 +702,7 @@ module mips(input clk, rst);
 
     hazard hz(branchD, WBSrcE, WBSrcM, RegWriteE, RegWriteM, RegWriteW, MultStartE, MultDoneE, RtD, RsD, RsE, RtE, WriteRegE, WriteRegW, WriteRegM, stallF, stallD, flushE, forwardAD, forwardBD, forwardAE, forwardBE);
 endmodule
+
 // Shift and add multiplier as shown in P&H
 module multiplier (input             clk, rst,
                    input      [31:0] SrcAE, SrcBE,
@@ -760,6 +775,7 @@ module multiplier (input             clk, rst,
     end
 endmodule
 
+
 module writeback(input             clk, rst,
                  input             jumpM, RegWriteM,
                  input      [2:0]  MemtoRegM,
@@ -770,25 +786,27 @@ module writeback(input             clk, rst,
                  input      [27:0] jumpDstD,
                  input      [31:0] PCPlus4F, PCBranchD,
                  
-                 output reg        RegWriteW,
-                 output reg [4:0]  WriteRegW,
-				 output     [31:0] ResultW,
-                 output     [31:0] PC);
+                 output        RegWriteW,
+                 output [4:0]  WriteRegW,
+                 output [31:0] ResultW, PC);
+    // Pipeline registers
+    reg RegWriteW_, jumpW_;
+    reg [4:0]  WriteRegW_;
+    reg [31:0] ReadDataW_, ALUMultOutW_, PCPlus8W_;
 
+    assign RegWriteW = RegWriteW_;
+    assign ResultW = MemtoRegM[1] ? (MemtoRegM[0] ? (ReadDataW_) : (ALUMultOutW_)) : (PCPlus8W_);
+    assign WriteRegW = jumpW_     ?  (5'b11111) : (WriteRegW_);
     assign PC = jumpD ? ({PCPlus4F[31:28], jumpDstD}) : (PCSrcD ? (PCBranchD) : (PCPlus4F));
-    reg        jumpW;
-    reg [2:0]  MemtoRegW;
-    reg [31:0] ReadDataW, ALUMultOutW;
 
-    assign ResultW = MemtoRegW[1] ? (MemtoRegW[0] ? (ReadDataW) : (ALUMultOutW)) : (PCPlus8M); 
-    always @ (posedge clk) begin
-        MemtoRegW <= MemtoRegM;
-        ReadDataW <= ReadDataM;
-        ALUMultOutW <= ALUMultOutM;
-        RegWriteW <= RegWriteM;
-        jumpW <= jumpM;
-
-        WriteRegW <= jumpM     ?  (5'b11111) : (WriteRegM);
-    end
+    always @ (posedge clk or posedge rst) begin
+            RegWriteW_   <= RegWriteM;
+            jumpW_       <= jumpM;
+            WriteRegW_   <= WriteRegM;
+            ReadDataW_   <= ReadDataM; 
+            ALUMultOutW_ <= ALUMultOutM;
+            PCPlus8W_    <= PCPlus8M;
+        end
 
 endmodule
+
