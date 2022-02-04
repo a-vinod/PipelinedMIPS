@@ -12,7 +12,7 @@ module datapath(input             clk, rst,
                 output  [3:0]  WBSrcE,
                 output  [4:0]  RsE, RtE, WriteRegE,
                 
-                output         RegWriteM,
+                output         RegWriteM, hitM,
                 output  [3:0]  WBSrcM,
                 output  [4:0]  WriteRegM,
                 
@@ -45,11 +45,11 @@ module datapath(input             clk, rst,
     wire MultStartE_, MultDoneE_;
     execute e(clk, rst,  multstartD, multsgnD, regwriteD, memwriteD, regdstD, jumpD, branchD_, alusrcD, WBSrcD, alucontrolD, rsD, rtD, reD, rd1d, rd2d, signimmD, unsignimmD, pcplus4D,  jumpE, RegWriteE_, MemWriteE, WBSrcE_, WriteRegE_, ALUMultOutM, ALUMultOutE, WriteDataE, PCPlus4E, resultW, flushE, forwardAE, forwardBE, MultStartE_, MultDoneE_, RsE_, RtE_, RdE_);
 
-    wire        jumpM, RegWriteM_;
+    wire        jumpM, RegWriteM_, hitM;
     wire [3:0]  WBSrcM_;
     wire [4:0]  WriteRegM_;
     wire [31:0] ReadDataM, PCPlus8M;
-    memory m(clk, rst, jumpE, RegWriteE_, MemWriteE, WBSrcE_, WriteRegE_, ALUMultOutE, WriteDataE, PCPlus4E, jumpM, RegWriteM_, WBSrcM_, WriteRegM_, ALUMultOutM, ReadDataM, PCPlus8M);
+    memory m(clk, rst, jumpE, RegWriteE_, MemWriteE, WBSrcE_, WriteRegE_, ALUMultOutE, WriteDataE, PCPlus4E, jumpM, RegWriteM_, hitM, WBSrcM_, WriteRegM_, ALUMultOutM, ReadDataM, PCPlus8M);
 
 
     writeback w(clk, rst, jumpM, RegWriteM_, WBSrcM_, WriteRegM_, ReadDataM, ALUMultOutM, PCPlus8M, pcsrcD, jumpD, jumpdstD, PCPlus4F, pcbranchD, RegWriteW_, writeregW, resultW, PC);
