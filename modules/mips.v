@@ -12,14 +12,14 @@ module mips(input clk, rst);
     wire [3:0]  WBSrcE;
     wire [4:0]  RsE, RtE, WriteRegE;
     
-    wire        RegWriteM;
+    wire        RegWriteM, hitM;
     wire [3:0]  WBSrcM;
     wire [4:0]  WriteRegM;
 
     wire        RegWriteW;
     wire [4:0]  WriteRegW;
-    datapath dp(clk, rst, stallF, stallD, forwardAD, forwardBD, branchD, RsD, RtD, flushE, forwardAE, forwardBE, RegWriteE, MultStartE, MultDoneE, WBSrcE, RsE, RtE, WriteRegE, RegWriteM, WBSrcM, WriteRegM, RegWriteW, WriteRegW);
+    datapath dp(clk, rst, stallF, stallD, forwardAD, forwardBD, branchD, RsD, RtD, flushE, forwardAE, forwardBE, RegWriteE, MultStartE, MultDoneE, WBSrcE, RsE, RtE, WriteRegE, RegWriteM, hitM, WBSrcM, WriteRegM, RegWriteW, WriteRegW);
 
-    hazard hz(branchD, WBSrcE, WBSrcM, RegWriteE, RegWriteM, RegWriteW, MultStartE, MultDoneE, RtD, RsD, RsE, RtE, WriteRegE, WriteRegW, WriteRegM, stallF, stallD, flushE, forwardAD, forwardBD, forwardAE, forwardBE);
+    hazard hz(branchD, WBSrcE, WBSrcM, RegWriteE, RegWriteM, hitM, RegWriteW, MultStartE, MultDoneE, RtD, RsD, RsE, RtE, WriteRegE, WriteRegW, WriteRegM, stallF, stallD, flushE, forwardAD, forwardBD, forwardAE, forwardBE);
 endmodule
 

@@ -3,7 +3,7 @@
 module hazard(
     input [1:0] branchD,
     input [3:0] wbsrcE, wbsrcM,
-    input regwriteE, regwriteM, regwriteW, 
+    input regwriteE, regwriteM, hitM, regwriteW, 
     input multstartE, pve,
     input [4:0] rtD, rsD, rsE, rtE, writeregE, writeregW, writeregM,
     output stallF, stallD, flushE,
