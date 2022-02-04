@@ -27,6 +27,7 @@ module data_memory(input              clk, rst, WE,
                     delay <= delay + 1;
                     READY <= 0;
                 end else begin
+                    // output 4 words corresponding to address 0000000000000000000000000000xx00
                     delay <= 0;
                     RD    <= {dm[{A[31:4], 4'b1100}], dm[{A[31:4], 4'b1000}], dm[{A[31:4], 4'b0100}], dm[{A[31:4], 4'b0000}]};
                     READY <= 1;
