@@ -4,7 +4,7 @@ module execute(input               clk, rst,
                input			   		   MultStartD, MultSgnD, RegWriteD, MemWriteD,
                                    RegDstD, jumpD,
                input        [1:0]  BranchD, ALUSrcD, 
-				 	  	input        [3:0]  MemtoRegD,
+				 	  	 input        [3:0]  MemtoRegD,
                input        [2:0]  ALUControlD,
 							 
                // Data
@@ -27,7 +27,7 @@ module execute(input               clk, rst,
                input        [31:0] ResultW,
 
                // HAZARD UNIT
-               input               FlushE,
+               input               FlushE, StallE,
                input        [1:0]  ForwardAE, ForwardBE,
                output              MultStartE, MultDoneE,
                output       [4:0]  RsE, RtE, RdE);
@@ -62,6 +62,7 @@ module execute(input               clk, rst,
   wire [31:0] SrcAE, SrcBE, SrcBE_tmp, ALU_a, ALU_b, ALUOut;
   wire [31:0] ALU_a_mult, ALU_b_mult, multOutHi, multOutLo;
     wire zero;
+		
   	assign SrcAE     = ForwardAE[1] ? (ALUOutM)       : (ForwardAE[0] ? (ResultW)   : (rd1E_));
   	assign SrcBE_tmp = ForwardBE[1] ? (ALUOutM)       : (ForwardBE[0] ? (ResultW)   : (rd2E_));
   	assign SrcBE     = ALUSrcE_[1]  ? (UnsignedImmE_) : (ALUSrcE_[0]  ? (SignImmE_) : (SrcBE_tmp));
@@ -70,7 +71,7 @@ module execute(input               clk, rst,
 		
     // MUX to select ALU inputs from multiplier or from register
     assign ALU_a     = multiply_status   ? ALU_a_mult : SrcAE;
-    assign ALU_b     = multiply_status  ? ALU_b_mult : SrcBE;
+    assign ALU_b     = multiply_status   ? ALU_b_mult : SrcBE;
 		assign ALU_Mult_Control = multiply_status ? 3'b010 : ALUControlE_;
   	
 
@@ -85,7 +86,7 @@ module execute(input               clk, rst,
 
     assign MultDoneE = MultDoneE_;
 
-  	assign ALUMultOutE = MemtoRegE_[3] ? (MemtoRegE_[2] ? ALUOut : multOutLo) : (multOutHi);
+  	assign ALUMultOutE = MemtoRegE_[3] ? (MemtoRegE_[2] ? ALUOut : multOutLo) : multOutHi;
 
     always @ (posedge clk, posedge rst) begin
             if (rst || (FlushE && !multiply_status)) begin
@@ -108,7 +109,8 @@ module execute(input               clk, rst,
                 MemtoRegE_    <= 4'b1110;
 								multiply_status <= 1'b0;
 								multiply_counter  <= 6'b0;
-            end else if (!multiply_status) begin
+            end else if (!StallE) begin
+								if (!multiply_status) begin
                 jumpE_        <= jumpD;
                 RegWriteE_    <= RegWriteD;
                 MemWriteE_    <= MemWriteD;
@@ -149,8 +151,10 @@ module execute(input               clk, rst,
 								multiply_counter <= multiply_counter + 1;
 						end else if (multiply_counter == 32)
 								multiply_status <= 1'b0;
+						end
 
         end
 
     
 endmodule
+
