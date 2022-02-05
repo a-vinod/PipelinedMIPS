@@ -60,9 +60,6 @@ module stall(
     output reg stallF, stallD, flushE, stallE, stallM, stallW
 );
 reg multplier, memory_loading;
-initial begin
-    multplier = 0;
-end
 always@(*)
 begin
     stallF <= 0;
@@ -90,7 +87,12 @@ begin
     begin
         stallF <= 1;
         stallD <= 1;
-        flushE <= 1;
+				if(!hitM && wbsrcM[1:0] == 2'b11) begin // if there's a data memory load in memory stage
+						stallE <= 1;
+						stallM <= 1;
+						stallW <= 1;
+				end else
+        		flushE <= 1;
         multplier <= 1;
     end
 
@@ -98,7 +100,12 @@ begin
     begin
         stallF <= 1;
         stallD <= 1;
-        flushE <= 1;
+				if(!hitM && wbsrcM[1:0] == 2'b11) begin // if there's a data memory load in memory stage
+						stallE <= 1;
+						stallM <= 1;
+						stallW <= 1;
+				end else
+        		flushE <= 1;
     end
 
     if((multplier == 1) && (pve == 1) && (multstartE != 1)) //end multplication
@@ -108,11 +115,11 @@ begin
     
 		if(!hitM && !multstartE && wbsrcM[1:0] == 2'b11) //data memory load
 		begin
-			stallF <= 1;
-      stallD <= 1;
-			stallE <= 1;
-			stallM <= 1;
-			stallW <= 1;
+				stallF <= 1;
+      	stallD <= 1;
+				stallE <= 1;
+				stallM <= 1;
+				stallW <= 1;
 		end
 end
 endmodule
