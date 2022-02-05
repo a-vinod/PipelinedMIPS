@@ -13,7 +13,7 @@ module memory(input             clk, rst, stallM,
     wire         data_memory_ready;
     wire [127:0] data_memory_RD;
     
-		// Pipeline registers updated on the rising edge
+    // Pipeline registers updated on the rising edge
     reg        jumpE_, RegWriteE_, MemWriteE_;
     reg [3:0]  MemtoRegE_;
     reg [4:0]  WriteRegE_;
