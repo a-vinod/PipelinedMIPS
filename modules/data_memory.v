@@ -1,43 +1,44 @@
-module data_memory(input              clk, rst, WE,
-									 input      [3:0] MemtoRegM,
-                   input      [31:0]  A, WD,
-                   output reg		  READY,
-                   output reg [127:0] RD);
-    reg [31:0] dm[2047:0];
-    reg [5:0] delay;
+module memory(input             clk, rst, stallM,
+                                jumpE, RegWriteE, MemWriteE,
+              input      [3:0]  MemtoRegE,
+              input      [4:0]  WriteRegE,
+              input      [31:0] ALUMultOutE, WriteDataE, PCPlus4E,
+              output         jumpM, RegWriteM, hitM,
+              output  [3:0]  MemtoRegM,
+              output  [4:0]  WriteRegM,
+              output  [31:0] ALUMultOutM,
+              output     [31:0] ReadDataM,
+              output  [31:0] PCPlus8M); 
 
-    // DEBUG WIRES
-    wire [31:0] dm_a;
-    assign dm_a = dm[A];
-
+    wire         data_memory_ready;
+    wire [127:0] data_memory_RD;
     
-		always @ (posedge clk) begin
-				if (WE) begin
-        		READY <= 0;
-            dm[A >> 2] <= WD;
-        end 
-		end
+		// Pipeline registers updated on the rising edge
+    reg        jumpE_, RegWriteE_, MemWriteE_;
+    reg [3:0]  MemtoRegE_;
+    reg [4:0]  WriteRegE_;
+    reg [31:0] ALUMultOutE_, WriteDataE_, PCPlus4E_;
+    
+    assign jumpM       = jumpE_;
+    assign RegWriteM   = RegWriteE_;
+    assign MemtoRegM   = MemtoRegE_;
+    assign WriteRegM   = WriteRegE_;
+    assign ALUMultOutM = ALUMultOutE_;
+    assign PCPlus8M    = PCPlus4E_ + 4;
 
-		integer i;
-    always @ (negedge clk, posedge rst) begin
-        if (rst) begin
-          	delay = 6'b0;
-          	READY <= 0;
-						for (i = 0; i < 2048; i = i + 1)
-								dm[i] = 32'b0;
-        end else begin
-          	if (MemtoRegM[1:0] == 2'b11) begin
-                // 20 cycle delay
-                if (delay < 19) begin
-                    delay <= delay + 1;
-                    READY <= 0;
-                end else begin
-                    // output 4 words corresponding to address tag
-                    delay <= 0;
-										RD    <= {dm[{A[31:4], 2'b11}], dm[{A[31:4], 2'b10}], dm[{A[31:4], 2'b01}], dm[{A[31:4], 2'b00}]};
-                    READY <= 1;
-                end
-            end
-        end
-    end
+		d_cache     dc (clk, rst, MemWriteE_, MemtoRegE_, ALUMultOutE_, WriteDataE_, data_memory_RD, data_memory_ready, hitM, ReadDataM);
+		data_memory dm (clk, rst, MemWriteE_, MemtoRegE_, ALUMultOutE_, WriteDataE_, data_memory_ready, data_memory_RD);
+		always @ (posedge clk) begin
+				if (!stallM) begin
+        		jumpE_       <= jumpE;
+        		RegWriteE_   <= RegWriteE;
+       		    MemtoRegE_   <= MemtoRegE;
+        		WriteRegE_   <= WriteRegE;
+        		ALUMultOutE_ <= ALUMultOutE;
+        		PCPlus4E_    <= PCPlus4E;
+
+        		WriteDataE_  <= WriteDataE;
+        		MemWriteE_   <= MemWriteE;
+				end
+		end
 endmodule
