@@ -23,7 +23,7 @@ module data_memory(input              clk, rst, WE,
         if (rst) begin
           	delay = 6'b0;
           	READY <= 0;
-						for (i = 0; i < 512; i = i + 1)
+						for (i = 0; i < 2048; i = i + 1)
 								dm[i] = 32'b0;
         end else begin
           	if (MemtoRegM[1:0] == 2'b11) begin
