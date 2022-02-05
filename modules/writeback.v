@@ -29,13 +29,13 @@ module writeback(input         clk, rst, stallW,
 				if (rst) begin
 						RegWriteM_ <= 0;
 				end else if (!stallW) begin
-						RegWriteM_ <= RegWriteM;
-						jumpM_ <= jumpM;
-						WriteRegM_ <= WriteRegM;
-						MemtoRegM_ <= MemtoRegM;
-						ReadDataM_ <= ReadDataM;
+						RegWriteM_   <= RegWriteM;
+						jumpM_       <= jumpM;
+						WriteRegM_   <= WriteRegM;
+						MemtoRegM_   <= MemtoRegM;
+						ReadDataM_   <= ReadDataM;
 						ALUMultOutM_ <= ALUMultOutM;
-						PCPlus8M_ <= PCPlus8M;
+						PCPlus8M_    <= PCPlus8M;
 				end
     end
 
