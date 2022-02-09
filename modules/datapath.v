@@ -21,20 +21,21 @@ module datapath(input             clk, rst,
                 output         RegWriteW,
                 output  [4:0]  WriteRegW);
 
+    wire        pcsrcD;
+    wire [1:0]  branchD_;
     wire [31:0] PC, InstrF, PCPlus4F;
-    fetch f(clk, rst, stallF, PC, InstrF, PCPlus4F);
+    fetch f(clk, rst, stallF, pcsrcD, branchD_, PC, InstrF, PCPlus4F);
 
     wire [4:0] writeregW;
     wire [31:0] resultW, ALUMultOutM;
     wire RegWriteW_;
     wire [31:0] pcplus4D, pcbranchD;
-  	wire [1:0] alusrcD, branchD_;
+  	wire [1:0] alusrcD;
     wire [2:0] alucontrolD;
 		wire [3:0] WBSrcD;
     wire [4:0] rsD, rtD, reD;
     wire [31:0] signimmD, unsignimmD;
     wire multstartD, multsgnD, regwriteD, memwriteD, regdstD, jumpD;
-    wire pcsrcD;
     wire [31:0] rd1d, rd2d;
     wire [27:0] jumpdstD;
     decode d(clk, rst, stallD, InstrF, PCPlus4F, forwardAD, forwardBD, writeregW, resultW, ALUMultOutM, RegWriteW_, pcplus4D, pcbranchD, branchD_, alusrcD, WBSrcD, alucontrolD, rsD, rtD, reD, signimmD, unsignimmD, multstartD, multsgnD, regwriteD, memwriteD, regdstD, jumpD, pcsrcD, rd1d, rd2d, jumpdstD);

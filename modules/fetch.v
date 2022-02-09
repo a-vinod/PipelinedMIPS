@@ -2,7 +2,8 @@
 //Stage Fetch
 
 module fetch(
-input clk, reset, stallF,
+input clk, reset, stallF, pcsrcD,
+input [1:0] branchD,
 input [31:0] pc,
 output [31:0] instrF, pcplus4F
 );
@@ -11,7 +12,7 @@ reg [31:0] pcF, stall_pcF;
 wire [31:0] pcF_;
 
 //flopr pcreg(clk, reset, stallF, pc, pcF);//Set for reset and update pc value
-imem imem(pcF[7:2], instrF); //Instruction memory
+imem imem(pcF[7:2], pcsrcD, branchD, instrF); //Instruction memory
 adder pcadd1(pcF, 32'b100, pcplus4F); //PC + 4
 
 	always @ (posedge clk, posedge reset) begin
@@ -38,6 +39,8 @@ endmodule
 
 // Instruction memory
 module imem(input   [5:0]  a,
+            input          pcsrcD,
+            input   [1:0]  branchD,
             output  [31:0] rd);
 
   reg [63:0] RAM[63:0];

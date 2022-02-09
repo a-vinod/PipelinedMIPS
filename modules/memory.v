@@ -32,7 +32,7 @@ module memory(input		 clk, rst, stallM,
 		if (!stallM) begin
 			jumpE_	     <= jumpE;
 			RegWriteE_   <= RegWriteE;
-   		    MemtoRegE_   <= MemtoRegE;
+   		MemtoRegE_   <= MemtoRegE;
 			WriteRegE_   <= WriteRegE;
 			ALUMultOutE_ <= ALUMultOutE;
 			PCPlus4E_	 <= PCPlus4E;
