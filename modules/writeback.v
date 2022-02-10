@@ -5,6 +5,7 @@ module writeback(input         clk, rst, stallW,
                  input  [31:0] ReadDataM, ALUMultOutM, PCPlus8M,
 
                  input         PCSrcD, jumpD,
+								 input  [1:0]  branchD,
                  input  [27:0] jumpDstD,
                  input  [31:0] PCPlus4F, PCBranchD,
                  
@@ -24,18 +25,18 @@ module writeback(input         clk, rst, stallW,
 		assign WriteRegW = jumpM_        ?  (5'b11111) : (WriteRegM_);
 		assign ResultW = MemtoRegM_[1]   ? (MemtoRegM_[0] ? (ReadDataM_) : (ALUMultOutM_)) : (PCPlus8M_);
 
-		assign PC = jumpD ? {PCPlus4F[31:28], jumpDstD} : (PCSrcD ? (PCBranchD) : (PCPlus4F));
+		assign PC = jumpD ? {PCPlus4F[31:28], jumpDstD} : (PCSrcD ? PCBranchD: PCPlus4F);
     always @ (posedge clk, posedge rst) begin
 				if (rst) begin
 						RegWriteM_ <= 0;
 				end else if (!stallW) begin
-						RegWriteM_   <= RegWriteM;
-						jumpM_       <= jumpM;
-						WriteRegM_   <= WriteRegM;
-						MemtoRegM_   <= MemtoRegM;
-						ReadDataM_   <= ReadDataM;
+						RegWriteM_ <= RegWriteM;
+						jumpM_ <= jumpM;
+						WriteRegM_ <= WriteRegM;
+						MemtoRegM_ <= MemtoRegM;
+						ReadDataM_ <= ReadDataM;
 						ALUMultOutM_ <= ALUMultOutM;
-						PCPlus8M_    <= PCPlus8M;
+						PCPlus8M_ <= PCPlus8M;
 				end
     end
 
