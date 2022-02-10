@@ -1,10 +1,12 @@
 module datapath(input             clk, rst, 
-                                  stallF, 
+                                  stallF,
+                output            hitF,
 
                 input             stallD,
                 input             forwardAD, forwardBD,
                 output  [1:0]  branchD,
                 output  [4:0]  RsD, RtD,
+								output 				 jumpd, pcsrcd,
                 
                 input             flushE, stallE,
                 input      [1:0]  forwardAE, forwardBE,
@@ -22,9 +24,10 @@ module datapath(input             clk, rst,
                 output  [4:0]  WriteRegW);
 
     wire        pcsrcD;
+		assign pcsrcd = pcsrcD;
     wire [1:0]  branchD_;
     wire [31:0] PC, InstrF, PCPlus4F;
-    fetch f(clk, rst, stallF, pcsrcD, branchD_, PC, InstrF, PCPlus4F);
+    fetch f(clk, rst, stallF, pcsrcD, branchD_, jumpd, PC, InstrF, PCPlus4F, hitF);
 
     wire [4:0] writeregW;
     wire [31:0] resultW, ALUMultOutM;
@@ -38,6 +41,7 @@ module datapath(input             clk, rst,
     wire multstartD, multsgnD, regwriteD, memwriteD, regdstD, jumpD;
     wire [31:0] rd1d, rd2d;
     wire [27:0] jumpdstD;
+		assign jumpd = jumpD;
     decode d(clk, rst, stallD, InstrF, PCPlus4F, forwardAD, forwardBD, writeregW, resultW, ALUMultOutM, RegWriteW_, pcplus4D, pcbranchD, branchD_, alusrcD, WBSrcD, alucontrolD, rsD, rtD, reD, signimmD, unsignimmD, multstartD, multsgnD, regwriteD, memwriteD, regdstD, jumpD, pcsrcD, rd1d, rd2d, jumpdstD);
 
     wire        jumpE, RegWriteE_, MemWriteE;
@@ -55,7 +59,7 @@ module datapath(input             clk, rst,
     memory m(clk, rst, stallM, jumpE, RegWriteE_, MemWriteE, WBSrcE_, WriteRegE_, ALUMultOutE, WriteDataE, PCPlus4E, jumpM, RegWriteM_, hitM, WBSrcM_, WriteRegM_, ALUMultOutM, ReadDataM, PCPlus8M);
 
 
-    writeback w(clk, rst, stallW, jumpM, RegWriteM_, WBSrcM_, WriteRegM_, ReadDataM, ALUMultOutM, PCPlus8M, pcsrcD, jumpD, jumpdstD, PCPlus4F, pcbranchD, RegWriteW_, writeregW, resultW, PC);
+    writeback w(clk, rst, stallW, jumpM, RegWriteM_, WBSrcM_, WriteRegM_, ReadDataM, ALUMultOutM, PCPlus8M, pcsrcD, jumpD, branchD, jumpdstD, PCPlus4F, pcbranchD, RegWriteW_, writeregW, resultW, PC);
 
     assign {MultStartE, MultDoneE} = {MultStartE_, MultDoneE_};
     assign branchD    = branchD_;
