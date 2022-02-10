@@ -23,7 +23,7 @@ reg [31:0] instrD, pcplus4D_;
 wire [1:0] clear; //0 for branch, 1 for jal
 assign clear[1] = jumpD;
 assign clear[0] = branchD[0] | branchD[1];
-//fdgate fdg(clk, reset, stallD, clear, instrF, pcplus4F, instrD, pcplus4D);//the gate 
+// fdgate fdg(clk, reset, stallD, clear, instrF, pcplus4F, instrD, pcplus4D);//the gate 
 
 controller c(instrD[31:26], instrD[5:0],
                multstartD, multsgnD,
@@ -59,17 +59,12 @@ assign jumpdstD = instrD[25:0] << 2;
 assign pcplus4D = pcplus4D_;
 reg stall_and_flush;
 always @ (posedge clk, posedge reset) begin 
-		if (reset || (pcsrcD && clear!=0) || stall_and_flush) begin
+		if (reset || (pcsrcD && clear!=0 && !stallD)) begin
 				instrD <= 32'b0;
 				pcplus4D_ <= 32'b0;
-				stall_and_flush <= 32'b0;
 		end else if (!stallD) begin
 				instrD <= instrF;
 				pcplus4D_ <= pcplus4F;
-		end
-
-		if ((pcsrcD && clear!=0) && stallD) begin
-			stall_and_flush <= 1'b1;
 		end
 end
 
@@ -209,7 +204,7 @@ endmodule
 
 
 //This module shift input signal two bits to the left
-// which is how we implement PC? = PC + 4 + SignImm × 4 in beq
+// which is how we implement PC? = PC + 4 + SignImm Ã 4 in beq
 module sl2 (input [31:0] a,
 output [31:0] y);
 // shift left by 2
