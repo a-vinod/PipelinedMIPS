@@ -1,11 +1,11 @@
-module execute(input        clk, rst,
+module execute(input         clk, rst,
                // DECODE STAGE
                // Downstream control flags
-               input			  MultStartD, MultSgnD, RegWriteD, MemWriteD,
-                            RegDstD, jumpD,
-               input  [1:0] BranchD, ALUSrcD, 
-				 	  	 input  [3:0] MemtoRegD,
-               input  [2:0] ALUControlD,
+               input	     MultStartD, MultSgnD, RegWriteD, MemWriteD,
+                             RegDstD, jumpD,
+               input  [1:0]  BranchD, ALUSrcD, 
+		 	   input  [3:0]  MemtoRegD,
+               input  [2:0]  ALUControlD,
 							 
                // Data
                input  [4:0]  RsD, RtD, RdD,
@@ -36,7 +36,7 @@ module execute(input        clk, rst,
     reg        jumpE_, RegWriteE_, MemWriteE_, RegDstE_, MultStartE_, MultSgnE_;
   	reg [1:0]  ALUSrcE_; 
     reg [2:0]  ALUControlE_;
-		reg [3:0]  MemtoRegE_;
+	reg [3:0]  MemtoRegE_;
     reg [4:0]  RsE_, RtE_, RdE_;
     reg [31:0] rd1E_, rd2E_, UnsignedImmE_, SignImmE_, PCPlus4E_; 
 
@@ -53,8 +53,8 @@ module execute(input        clk, rst,
     assign PCPlus4E = PCPlus4E_;
 
     assign MultStartE = MultStartE_;
-		reg multiply_status;
-		reg [6:0] multiply_counter;
+	reg multiply_status;
+	reg [6:0] multiply_counter;
     assign WriteRegE  = multiply_status ? 5'b0 : (RegDstE_     ? (RdE) : (RtE));
   	assign WriteDataE = ForwardBE[1] ? (ALUOutM) : (ForwardBE[0] ? (ResultW) : (rd2E_));
 
@@ -66,13 +66,13 @@ module execute(input        clk, rst,
   	assign SrcAE     = ForwardAE[1] ? (ALUOutM)       : (ForwardAE[0] ? (ResultW)   : (rd1E_));
   	assign SrcBE_tmp = ForwardBE[1] ? (ALUOutM)       : (ForwardBE[0] ? (ResultW)   : (rd2E_));
   	assign SrcBE     = ALUSrcE_[1]  ? (UnsignedImmE_) : (ALUSrcE_[0]  ? (SignImmE_) : (SrcBE_tmp));
-		wire [2:0] ALU_Mult_Control;
+	wire [2:0] ALU_Mult_Control;
 		
     // MUX to select ALU inputs from multiplier or from register
     assign ALU_a     = multiply_status   ? ALU_a_mult : SrcAE;
     assign ALU_b     = multiply_status   ? ALU_b_mult : SrcBE;
-		// If ALU is being used for the mutiplier, we need to set control bits to make it add
-		assign ALU_Mult_Control = multiply_status ? 3'b010 : ALUControlE_;
+	// If ALU is being used for the mutiplier, we need to set control bits to make it add
+	assign ALU_Mult_Control = multiply_status ? 3'b010 : ALUControlE_;
   	
 
     // Instantiate and wire together ALU and multiplier
@@ -107,8 +107,8 @@ module execute(input        clk, rst,
             SignImmE_     <= 32'b0;
             PCPlus4E_     <= 32'b0;
             MemtoRegE_    <= 4'b1110;
-						multiply_status  <= 1'b0;
-						multiply_counter <= 6'b0;
+			multiply_status  <= 1'b0;
+			multiply_counter <= 6'b0;
         end else if (!StallE && !multiply_status) begin
             jumpE_        <= jumpD;
             RegWriteE_    <= RegWriteD;
@@ -127,9 +127,9 @@ module execute(input        clk, rst,
             SignImmE_     <= SignImmD;
             PCPlus4E_     <= PCPlus4D;
             MemtoRegE_    <= MemtoRegD;
-						if (MultStartD)
-								multiply_status <= 1'b1;
-				end else if (multiply_status && (multiply_counter < 32)) begin
+			if (MultStartD)
+				multiply_status <= 1'b1;
+		end else if (multiply_status && (multiply_counter < 32)) begin
             jumpE_        <= 1'b0;
             RegWriteE_    <= 1'b0;
             MemWriteE_    <= 2'b0;
@@ -147,10 +147,10 @@ module execute(input        clk, rst,
             SignImmE_     <= 32'b0;
             PCPlus4E_     <= 32'b0;
             MemtoRegE_    <= 4'b1110;	
-						multiply_counter <= multiply_counter + 1;
-				end else if (multiply_status && (multiply_counter == 32)) begin
-						multiply_status <= 1'b0;
-						multiply_counter <= 1'b0;
-				end
+			multiply_counter <= multiply_counter + 1;
+		end else if (multiply_status && (multiply_counter == 32)) begin
+			multiply_status <= 1'b0;
+			multiply_counter <= 1'b0;
+		end
     end
 endmodule

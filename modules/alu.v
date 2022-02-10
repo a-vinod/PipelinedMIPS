@@ -13,7 +13,7 @@ module ALU (input [31:0] a, b, input [2:0] f, output reg [31:0] y, output zero);
     // sub  : 101
     // slt  : 110
     // <<16 : 111
-    assign b_signed = (f[2]) ? ~b : b;
+    assign b_signed  = (f[2]) ? ~b : b;
     assign {cout, S} = f[2] + a + b_signed ;
     always @ * begin
         case (f) 

@@ -1,13 +1,13 @@
 
-module i_cache(input		 	  clk, rst,
-               input      [31:0] A,
-            	 input          pcsrcD, jumpD,
-            	 input   [1:0]  branchD,
-               input	    [511:0] WM, // 4 words per block read from cache
-               input 	 		  READY,
-               output			  cache_hit,
-               output   [31:0]  RD);
-		reg [1064:0] cache[0:127];
+module i_cache(input    	  clk, rst,
+               input  [31:0]  A,
+               input          pcsrcD, jumpD,
+        	   input  [1:0]   branchD,
+               input  [511:0] WM, // 4 words per block read from cache
+               input 	 	  READY,
+               output		  cache_hit,
+               output [31:0]  RD);
+	reg [1064:0] cache[0:127];
   	// Useful Indices:
   	// cache[][511:0]       : data_0
     // 	 cache[][31:0] 	    : word_0
@@ -59,8 +59,8 @@ module i_cache(input		 	  clk, rst,
 	  assign cache_row = cache[A[12:6]];
   	
   	// DEBUG WIRES
-	  wire [19:0] tag1, tag0, a;
-	  wire [5:0] s;
+    wire [19:0] tag1, tag0, a;
+    wire [5:0] s;
   	wire [511:0] data1, data0;
   	wire lru, v0, v1;
   	assign data1 = cache[A[12:6]][1043:532];
@@ -71,12 +71,12 @@ module i_cache(input		 	  clk, rst,
   	assign v0 = cache[A[12:6]][531];
   	assign lru = cache[A[12:6]][1064];
   	assign a = A[31:13];
-	  assign s = A[12:6];
+    assign s = A[12:6];
 
     assign hit_0 = (cache_row[530:512] == A[31:13]) && cache_row[531];
     assign hit_1 = (cache_row[1062:1044] == A[31:13]) && cache_row[1063];
-	  assign hit   = hit_0 | hit_1;
-	  assign cache_hit = hit;
+    assign hit   = hit_0 | hit_1;
+	assign cache_hit = hit;
 
     wire [31:0] data_0, data_1;
 
@@ -97,18 +97,18 @@ module i_cache(input		 	  clk, rst,
               	if (cache[A[12:6]][1064]) begin     // LRU = 1
                     cache[A[12:6]][1062:1044] <= A[31:13];  // Write to tag_1
                     cache[A[12:6]][1043:532]  <= WM; // Write to data_1
-              		  cache[A[12:6]][1063]      <= 1;  // Update valid bit
-					          cache[A[12:6]][1064]      <= 0;  // Update LRU
+          		    cache[A[12:6]][1063]      <= 1;  // Update valid bit
+					cache[A[12:6]][1064]      <= 0;  // Update LRU
                 end else begin                     // LRU = 0
                     cache[A[12:6]][530:512] <= A[31:13];  // Write to tag_0
                     cache[A[12:6]][511:0]   <= WM; // Write to data_0
-              		  cache[A[12:6]][531]     <= 1;  // Update valid bit
-					          cache[A[12:6]][1064]    <= 1;  // Update LRU
+              		cache[A[12:6]][531]     <= 1;  // Update valid bit
+					cache[A[12:6]][1064]    <= 1;  // Update LRU
                 end
             end else if (hit) begin	// cache hit
-								// Update LRU bit
-								cache[A[12:6]][1064] <= hit_1 ? 0 : 1;
-						end
+			    // Update LRU bit
+				cache[A[12:6]][1064] <= hit_1 ? 0 : 1;
+			end
         end
   	end
 endmodule

@@ -1,47 +1,47 @@
-module datapath(input             clk, rst, 
-                                  stallF,
-                output            hitF,
+module datapath(input         clk, rst, 
+                              stallF,
+                output        hitF,
 
-                input             stallD,
-                input             forwardAD, forwardBD,
-                output  [1:0]  branchD,
-                output  [4:0]  RsD, RtD,
-								output 				 jumpd, pcsrcd,
+                input         stallD,
+                input         forwardAD, forwardBD,
+                output  [1:0] branchD,
+                output  [4:0] RsD, RtD,
+				output 		  jumpd, pcsrcd,
                 
-                input             flushE, stallE,
-                input      [1:0]  forwardAE, forwardBE,
-                output        RegWriteE, MultStartE, MultDoneE,
-                output  [3:0]  WBSrcE,
-                output  [4:0]  RsE, RtE, WriteRegE,
+                input        flushE, stallE,
+                input  [1:0] forwardAE, forwardBE,
+                output       RegWriteE, MultStartE, MultDoneE,
+                output [3:0] WBSrcE,
+                output [4:0] RsE, RtE, WriteRegE,
                 
-								input 				 stallM,
-                output         RegWriteM, hitM,
-                output  [3:0]  WBSrcM,
-                output  [4:0]  WriteRegM,
+				input        stallM,
+                output       RegWriteM, hitM,
+                output [3:0] WBSrcM,
+                output [4:0] WriteRegM,
                 
-								input 				 stallW,
-                output         RegWriteW,
-                output  [4:0]  WriteRegW);
+				input        stallW,
+                output       RegWriteW,
+                output [4:0] WriteRegW);
 
     wire        pcsrcD;
-		assign pcsrcd = pcsrcD;
+	assign pcsrcd = pcsrcD;
     wire [1:0]  branchD_;
     wire [31:0] PC, InstrF, PCPlus4F;
     fetch f(clk, rst, stallF, pcsrcD, branchD_, jumpd, PC, InstrF, PCPlus4F, hitF);
 
-    wire [4:0] writeregW;
+    wire [4:0]  writeregW;
     wire [31:0] resultW, ALUMultOutM;
-    wire RegWriteW_;
+    wire        RegWriteW_;
     wire [31:0] pcplus4D, pcbranchD;
-  	wire [1:0] alusrcD;
-    wire [2:0] alucontrolD;
-		wire [3:0] WBSrcD;
-    wire [4:0] rsD, rtD, reD;
+  	wire [1:0]  alusrcD;
+    wire [2:0]  alucontrolD;
+	wire [3:0]  WBSrcD;
+    wire [4:0]  rsD, rtD, reD;
     wire [31:0] signimmD, unsignimmD;
-    wire multstartD, multsgnD, regwriteD, memwriteD, regdstD, jumpD;
+    wire        multstartD, multsgnD, regwriteD, memwriteD, regdstD, jumpD;
     wire [31:0] rd1d, rd2d;
     wire [27:0] jumpdstD;
-		assign jumpd = jumpD;
+	assign jumpd = jumpD;
     decode d(clk, rst, stallD, InstrF, PCPlus4F, forwardAD, forwardBD, writeregW, resultW, ALUMultOutM, RegWriteW_, pcplus4D, pcbranchD, branchD_, alusrcD, WBSrcD, alucontrolD, rsD, rtD, reD, signimmD, unsignimmD, multstartD, multsgnD, regwriteD, memwriteD, regdstD, jumpD, pcsrcD, rd1d, rd2d, jumpdstD);
 
     wire        jumpE, RegWriteE_, MemWriteE;
@@ -49,7 +49,7 @@ module datapath(input             clk, rst,
     wire [4:0]  WriteRegE_;
     wire [31:0] ALUMultOutE, WriteDataE, PCPlus4E;
   	wire [4:0]  RsE_, RtE_, RdE_;
-    wire MultStartE_, MultDoneE_;
+    wire        MultStartE_, MultDoneE_;
     execute e(clk, rst, multstartD, multsgnD, regwriteD, memwriteD, regdstD, jumpD, branchD_, alusrcD, WBSrcD, alucontrolD, rsD, rtD, reD, rd1d, rd2d, signimmD, unsignimmD, pcplus4D,  jumpE, RegWriteE_, MemWriteE, WBSrcE_, WriteRegE_, ALUMultOutM, ALUMultOutE, WriteDataE, PCPlus4E, resultW, flushE, stallE, forwardAE, forwardBE, MultStartE_, MultDoneE_, RsE_, RtE_, RdE_);
 
     wire        jumpM, RegWriteM_;
