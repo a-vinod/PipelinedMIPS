@@ -1,11 +1,13 @@
-module d_cache(input		 	  clk, rst,	WE, PCSrcD,
-							 input      [3:0] MemtoRegM,
-               input      [31:0] A, WD,
+
+module i_cache(input		 	  clk, rst,
+               input      [31:0] A,
+            	 input          pcsrcD, jumpD,
+            	 input   [1:0]  branchD,
                input	    [511:0] WM, // 4 words per block read from cache
                input 	 		  READY,
                output			  cache_hit,
                output   [31:0]  RD);
-		reg [1066:0] cache[0:127];
+		reg [1064:0] cache[0:127];
   	// Useful Indices:
   	// cache[][511:0]       : data_0
     // 	 cache[][31:0] 	    : word_0
@@ -67,7 +69,7 @@ module d_cache(input		 	  clk, rst,	WE, PCSrcD,
   	assign tag0 = cache[A[12:6]][530:512];
   	assign v1 = cache[A[12:6]][1063];
   	assign v0 = cache[A[12:6]][531];
-  	assign lru = cache[A[12:6]][1066];
+  	assign lru = cache[A[12:6]][1064];
   	assign a = A[31:13];
 	  assign s = A[12:6];
 
@@ -79,7 +81,7 @@ module d_cache(input		 	  clk, rst,	WE, PCSrcD,
     wire [31:0] data_0, data_1;
 
     MUX_4b m1(cache[A[12:6]][31:0], cache[A[12:6]][63:32], cache[A[12:6]][95:64], cache[A[12:6]][127:96], cache[A[12:6]][159:128], cache[A[12:6]][191:160], cache[A[12:6]][223:192], cache[A[12:6]][255:224], cache[A[12:6]][287:256], cache[A[12:6]][319:288], cache[A[12:6]][351:320], cache[A[12:6]][383:352], cache[A[12:6]][415:384], cache[A[12:6]][447:416], cache[A[12:6]][479:448], cache[A[12:6]][511:480], A[5:2], data_0);
-    MUX_4b m2(cache[A[12:6]][564:533], cache[A[12:6]][596:565], cache[A[12:6]][628:597], cache[A[12:6]][660:629], cache[A[12:6]][692:661], cache[A[12:6]][724:693], cache[A[12:6]][756:725], cache[A[12:6]][788:757], cache[A[12:6]][820:789], cache[A[12:6]][852:821], cache[A[12:6]][884:853], cache[A[12:6]][916:885], cache[A[12:6]][948:917], cache[A[12:6]][980:949], cache[A[12:6]][1012:981], cache[A[12:6]][1044:1013], A[5:2], data_1);
+    MUX_4b m2(cache[A[12:6]][563:532], cache[A[12:6]][595:564], cache[A[12:6]][627:596], cache[A[12:6]][659:628], cache[A[12:6]][691:660], cache[A[12:6]][723:692], cache[A[12:6]][755:724], cache[A[12:6]][787:756], cache[A[12:6]][819:788], cache[A[12:6]][851:820], cache[A[12:6]][883:852], cache[A[12:6]][915:884], cache[A[12:6]][947:916], cache[A[12:6]][979:948], cache[A[12:6]][1011:980], cache[A[12:6]][1043:1012], A[5:2], data_1);
   	assign RD = hit_1 ? data_1 : data_0;
   	
   	integer i;
@@ -87,67 +89,27 @@ module d_cache(input		 	  clk, rst,	WE, PCSrcD,
   	always @ (negedge clk, posedge rst) begin
         if (rst) begin
           	for (i = 0; i < 128; i = i + 1)
-              	cache[i] = 1067'b0;
-        end else if (MemtoRegM[1:0] == 2'b11 || WE) begin // Read/write
+              	cache[i] = 1064'b0;
+        end else begin
             // Cache miss: after 20 cycles, data fetched from memory is ready
             //             on the WM line and READY signal is high
             if (!hit && READY) begin // cache miss: read from memory
-              	if (cache[A[12:6]][1066]) begin     // LRU = 1
+              	if (cache[A[12:6]][1064]) begin     // LRU = 1
                     cache[A[12:6]][1062:1044] <= A[31:13];  // Write to tag_1
                     cache[A[12:6]][1043:532]  <= WM; // Write to data_1
               		  cache[A[12:6]][1063]      <= 1;  // Update valid bit
-					          cache[A[12:6]][1066]      <= 0;  // Update LRU
+					          cache[A[12:6]][1064]      <= 0;  // Update LRU
                 end else begin                     // LRU = 0
                     cache[A[12:6]][530:512] <= A[31:13];  // Write to tag_0
                     cache[A[12:6]][511:0]   <= WM; // Write to data_0
               		  cache[A[12:6]][531]     <= 1;  // Update valid bit
-					          cache[A[12:6]][1066]    <= 1;  // Update LRU
+					          cache[A[12:6]][1064]    <= 1;  // Update LRU
                 end
             end else if (hit) begin	// cache hit
 								// Update LRU bit
-								cache[A[12:6]][1066] <= hit_1 ? 0 : 1;
-								if (WE) begin //Update word in cache
-										if (hit_1) begin
-												case (A[5:2])
-														4'b0000: cache[A[12:6]][564:533]    <= WD;
-														4'b0001: cache[A[12:6]][596:565]    <= WD;
-														4'b0010: cache[A[12:6]][628:597]    <= WD;
-														4'b0011: cache[A[12:6]][660:629]    <= WD;
-														4'b0100: cache[A[12:6]][692:661]    <= WD;
-														4'b0101: cache[A[12:6]][724:693]    <= WD;
-														4'b0110: cache[A[12:6]][756:725]    <= WD;
-														4'b0111: cache[A[12:6]][788:757]    <= WD;
-														4'b1000: cache[A[12:6]][820:789]    <= WD;
-														4'b1001: cache[A[12:6]][852:821]    <= WD;
-														4'b1010: cache[A[12:6]][884:853]    <= WD;
-														4'b1011: cache[A[12:6]][916:885]    <= WD;
-														4'b1100: cache[A[12:6]][948:917]    <= WD;
-														4'b1101: cache[A[12:6]][980:949]    <= WD;
-														4'b1110: cache[A[12:6]][1012:981]   <= WD;
-														4'b1111: cache[A[12:6]][1044:1013]  <= WD;
-												endcase
-										end else if (hit_0) begin
-												case (A[5:2])
-														4'b0000: cache[A[12:6]][31:0]     <= WD;
-														4'b0001: cache[A[12:6]][63:32]    <= WD;
-														4'b0010: cache[A[12:6]][95:64]    <= WD;
-														4'b0011: cache[A[12:6]][127:96]   <= WD;
-														4'b0100: cache[A[12:6]][159:128]  <= WD;
-														4'b0101: cache[A[12:6]][191:160]  <= WD;
-														4'b0110: cache[A[12:6]][223:192]  <= WD;
-														4'b0111: cache[A[12:6]][255:224]  <= WD;
-														4'b1000: cache[A[12:6]][287:256]  <= WD;
-														4'b1001: cache[A[12:6]][319:288]  <= WD;
-														4'b1010: cache[A[12:6]][351:320]  <= WD;
-														4'b1011: cache[A[12:6]][383:352]  <= WD;
-														4'b1100: cache[A[12:6]][415:384]  <= WD;
-														4'b1101: cache[A[12:6]][447:416]  <= WD;
-														4'b1110: cache[A[12:6]][479:448]  <= WD;
-														4'b1111: cache[A[12:6]][511:480]  <= WD;
-												endcase
-										end
-								end
+								cache[A[12:6]][1064] <= hit_1 ? 0 : 1;
 						end
         end
   	end
 endmodule
+
