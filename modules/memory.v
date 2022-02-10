@@ -11,7 +11,7 @@ module memory(input		 clk, rst, stallM,
 			  output [31:0] PCPlus8M); 
 
 	wire		 data_memory_ready;
-	wire [127:0] data_memory_RD;
+	wire [511:0] data_memory_RD;
 	
 		// Pipeline registers updated on the rising edge
 	reg		   jumpE_, RegWriteE_, MemWriteE_;
@@ -32,7 +32,7 @@ module memory(input		 clk, rst, stallM,
 		if (!stallM) begin
 			jumpE_	     <= jumpE;
 			RegWriteE_   <= RegWriteE;
-   		MemtoRegE_   <= MemtoRegE;
+   		    MemtoRegE_   <= MemtoRegE;
 			WriteRegE_   <= WriteRegE;
 			ALUMultOutE_ <= ALUMultOutE;
 			PCPlus4E_	 <= PCPlus4E;
