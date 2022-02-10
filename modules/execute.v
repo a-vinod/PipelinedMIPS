@@ -109,8 +109,7 @@ module execute(input        clk, rst,
             MemtoRegE_    <= 4'b1110;
 						multiply_status  <= 1'b0;
 						multiply_counter <= 6'b0;
-        end else if (!StallE) begin
-						if (!multiply_status) begin
+        end else if (!StallE && !multiply_status) begin
             jumpE_        <= jumpD;
             RegWriteE_    <= RegWriteD;
             MemWriteE_    <= MemWriteD;
@@ -130,7 +129,7 @@ module execute(input        clk, rst,
             MemtoRegE_    <= MemtoRegD;
 						if (MultStartD)
 								multiply_status <= 1'b1;
-				end else if (multiply_counter < 32) begin
+				end else if (multiply_status && (multiply_counter < 32)) begin
             jumpE_        <= 1'b0;
             RegWriteE_    <= 1'b0;
             MemWriteE_    <= 2'b0;
@@ -149,9 +148,9 @@ module execute(input        clk, rst,
             PCPlus4E_     <= 32'b0;
             MemtoRegE_    <= 4'b1110;	
 						multiply_counter <= multiply_counter + 1;
-				end else if (multiply_counter == 32)
+				end else if (multiply_status && (multiply_counter == 32)) begin
 						multiply_status <= 1'b0;
+						multiply_counter <= 1'b0;
 				end
     end
 endmodule
-
