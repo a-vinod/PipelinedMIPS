@@ -1,18 +1,19 @@
+
 //This is the hazard Unit
 
 module hazard(
     input [1:0] branchD,
+	input jumpD, pcsrcD,
     input [3:0] wbsrcE, wbsrcM,
-    input regwriteE, regwriteM, regwriteW, 
+    input regwriteE, regwriteM, regwriteW, hitM, hitF,
     input multstartE, pve,
     input [4:0] rtD, rsD, rsE, rtE, writeregE, writeregW, writeregM,
-    output stallF, stallD, flushE,
+    output stallF, stallD, flushE, stallE, stallM, stallW,
     output forwardAD, forwardBD,
     output [1:0] forwardAE, forwardBE
 );
-
     forward fw(rtD, rsD, rsE, rtE, writeregE, writeregW, writeregM,regwriteE, regwriteM, regwriteW,forwardAD, forwardBD,forwardAE, forwardBE);
-    stall st(branchD, wbsrcE, wbsrcM,regwriteE, regwriteM, regwriteW,rtD, rsD, rsE, rtE, writeregE, writeregW, writeregM,multstartE, pve, stallF, stallD, flushE);
+    stall st(branchD, jumpD, pcsrcD, wbsrcE, wbsrcM,regwriteE, regwriteM, regwriteW,hitM, hitF, rtD, rsD, rsE, rtE, writeregE, writeregW, writeregM,multstartE, pve, stallF, stallD, flushE, stallE, stallM, stallW);
 
 endmodule
 
@@ -54,21 +55,25 @@ endmodule
 
 module stall(
     input [1:0] branchD,
+	input jumpD, pcsrcD,
     input [3:0] wbsrcE, wbsrcM,
-    input regwriteE, regwriteM, regwriteW,
+    input regwriteE, regwriteM, regwriteW, hitM, hitF,
     input [4:0] rtD, rsD, rsE, rtE, writeregE, writeregW, writeregM,
     input multstartE, pve,
-    output reg stallF, stallD, flushE
+    output reg stallF, stallD, flushE, stallE, stallM, stallW
 );
-reg multplier;
-initial begin
-    multplier = 0;
-end
+wire d_cache_stall, i_cache_stall;
+assign i_cache_stall = !hitF && !branchD[0] && !branchD[1] && !pcsrcD && !jumpD;
+assign d_cache_stall = !hitM && wbsrcM[1:0] == 2'b11;
+reg multplier, memory_loading;
 always@(*)
 begin
     stallF <= 0;
     stallD <= 0;
     flushE <= 0;
+	stallE <= 0;
+	stallM <= 0;
+	stallW <= 0;
 
     if(((rsD == rtE) || (rtE == rtD)) && (wbsrcE == 4'b1111)) //lw
     begin
@@ -77,7 +82,7 @@ begin
         flushE <= 1;
     end
 
-    if((branchD!=2'b00) && ((regwriteE && ((rsD == writeregE) || (rtD == writeregE))) || ((wbsrcM == 4'b1110) && ((rsD == writeregM) || (rtD == writeregM))))) //branch
+    if(hitF && (branchD != 2'b00) && ((regwriteE && ((rsD == writeregE) || (rtD == writeregE))) || ((wbsrcM[1:0] == 2'b11) && ((rsD == writeregM) || (rtD == writeregM))))) //branch
     begin
         stallF <= 1;
         stallD <= 1;
@@ -88,7 +93,12 @@ begin
     begin
         stallF <= 1;
         stallD <= 1;
-        flushE <= 1;
+		if(!hitM && wbsrcM[1:0] == 2'b11) begin // if there's a data memory load in memory stage
+			stallE <= 1;
+			stallM <= 1;
+			stallW <= 1;
+		end else
+		flushE <= 1;
         multplier <= 1;
     end
 
@@ -96,7 +106,12 @@ begin
     begin
         stallF <= 1;
         stallD <= 1;
-        flushE <= 1;
+        if(!hitM && wbsrcM[1:0] == 2'b11) begin
+	        stallE <= 1;
+	        stallM <= 1;
+	        stallW <= 1;
+        end else
+		    flushE <= 1;
     end
 
     if((multplier == 1) && (pve == 1) && (multstartE != 1)) //end multplication
@@ -104,8 +119,15 @@ begin
         multplier <= 0;
     end
     
+	if((i_cache_stall || d_cache_stall) && !multstartE)
+	begin
+        stallF <= 1;
+        stallD <= 1;
+        stallE <= 1;
+        stallM <= 1;
+        stallW <= 1;
+	end
 end
 endmodule
-
 
 

@@ -1,81 +1,73 @@
 //Stage Decode
 
-module decode(
-input clk, reset, stallD,
-input [31:0] instrF, pcplus4F,
-input forwardAD, forwardBD,
-input [4:0] writeregW,
-input [31:0] resultW, aluoutM,
-input regwriteW,
-output [31:0] pcplus4D, pcbranchD,
-output [1:0] branchD, alusrcD,
-output [3:0] wbsrcD,
-output [2:0] alucontrolD,
-output [4:0] rsD, rtD, reD,
-output [31:0] signimmD, unsignimmD,
-output multstartD, multsgnD, regwriteD, memwriteD, regdstD, jumpD,
-output pcsrcD,
-output [31:0] rd1d, rd2d,
-output [27:0] jumpdstD
-);
+module decode(input         clk, reset, stallD,
+              input  [31:0] instrF, pcplus4F,
+              input         forwardAD, forwardBD,
+              input  [4:0]  writeregW,
+              input  [31:0] resultW, aluoutM,
+              input         regwriteW,
+              output [31:0] pcplus4D, pcbranchD,
+              output [1:0]  branchD, alusrcD,
+              output [3:0]  wbsrcD,
+              output [2:0]  alucontrolD,
+              output [4:0]  rsD, rtD, reD,
+              output [31:0] signimmD, unsignimmD,
+              output        multstartD, multsgnD, regwriteD, memwriteD, regdstD, jumpD, pcsrcD,
+              output [31:0] rd1d, rd2d,
+              output [27:0] jumpdstD);
 
-reg [31:0] instrD, pcplus4D_;
-wire [1:0] clear; //0 for branch, 1 for jal
-assign clear[1] = jumpD;
-assign clear[0] = branchD[0] | branchD[1];
-//fdgate fdg(clk, reset, stallD, clear, instrF, pcplus4F, instrD, pcplus4D);//the gate 
+    reg [31:0] instrD, pcplus4D_;
+    wire [1:0] clear; //0 for branch, 1 for jal
+    assign clear[1] = jumpD;
+    assign clear[0] = branchD[0] | branchD[1];
+    // fdgate fdg(clk, reset, stallD, clear, instrF, pcplus4F, instrD, pcplus4D);//the gate 
 
-controller c(instrD[31:26], instrD[5:0],
-               multstartD, multsgnD,
-               branchD, wbsrcD, memwriteD,
-               alusrcD, regdstD, regwriteD, jumpD,
-               alucontrolD);
+    controller c(instrD[31:26], instrD[5:0],
+                   multstartD, multsgnD,
+                   branchD, wbsrcD, memwriteD,
+                   alusrcD, regdstD, regwriteD, jumpD,
+                   alucontrolD);
 
-//Register File
-wire [31:0] rd1, rd2;
-regfile rf(clk, regwriteW, reset, instrD[25:21], instrD[20:16], writeregW, resultW, rd1, rd2);
+    //Register File
+    wire [31:0] rd1, rd2;
+    regfile rf(clk, regwriteW, reset, instrD[25:21], instrD[20:16], writeregW, resultW, rd1, rd2);
 
-//rsD, rtD, reD
-assign rsD = instrD[25:21];
-assign rtD = instrD[20:16];
-assign reD = instrD[15:11];
+    //rsD, rtD, reD
+    assign rsD = instrD[25:21];
+    assign rtD = instrD[20:16];
+    assign reD = instrD[15:11];
 
-//extension
-signext se(instrD[15:0], signimmD);
-unsignext tuse(instrD[15:0], unsignimmD);
+    //extension
+    signext se(instrD[15:0], signimmD);
+    unsignext tuse(instrD[15:0], unsignimmD);
 
-//brench
-wire [31:0] shiftedsignimm;
-sl2 immsh(signimmD, shiftedsignimm);
-adderD pcaddD(pcplus4D_, shiftedsignimm, pcbranchD);//PC p addressing
+    //brench
+    wire [31:0] shiftedsignimm;
+    sl2 immsh(signimmD, shiftedsignimm);
+    adderD pcaddD(pcplus4D_, shiftedsignimm, pcbranchD);//PC p addressing
 
-//brench early decision
-mux2 #(32) mux1D(rd1, aluoutM, forwardAD, rd1d);
-mux2 #(32) mux2D(rd2, aluoutM, forwardBD, rd2d);
-branchComparison bc(rd1d,rd2d,branchD,pcsrcD);//branch comparasion
+    //brench early decision
+    mux2 #(32) mux1D(rd1, aluoutM, forwardAD, rd1d);
+    mux2 #(32) mux2D(rd2, aluoutM, forwardBD, rd2d);
+    branchComparison bc(rd1d,rd2d,branchD,pcsrcD);//branch comparasion
 
-//j type address
-assign jumpdstD = instrD[25:0] << 2;
-assign pcplus4D = pcplus4D_;
-reg stall_and_flush;
-always @ (posedge clk, posedge reset) begin 
-		if (reset || (pcsrcD && clear!=0) || stall_and_flush) begin
-				instrD <= 32'b0;
-				pcplus4D_ <= 32'b0;
-				stall_and_flush <= 32'b0;
-		end else if (!stallD) begin
-				instrD <= instrF;
-				pcplus4D_ <= pcplus4F;
-		end
-
-		if ((pcsrcD && clear!=0) && stallD) begin
-			stall_and_flush <= 1'b1;
-		end
-end
+    //j type address
+    assign jumpdstD = instrD[25:0] << 2;
+    assign pcplus4D = pcplus4D_;
+    reg stall_and_flush;
+    always @ (posedge clk, posedge reset) begin 
+	    if (reset || (pcsrcD && clear!=0 && !stallD)) begin
+		    instrD <= 32'b0;
+		    pcplus4D_ <= 32'b0;
+	    end else if (!stallD) begin
+		    instrD <= instrF;
+		    pcplus4D_ <= pcplus4F;
+	    end
+    end
 
 endmodule
 
-
+/*
 module fdgate(  //pipeline gate between F and D
 input clk, rst, stallD,
 input [1:0] clear,
@@ -107,7 +99,7 @@ always @ (posedge clk, posedge rst, posedge clear)
     end
 
 endmodule
-
+*/
 
 
 module controller(input   [5:0] opD, functD,
@@ -169,11 +161,11 @@ endmodule
 //a2 is the bits of the instruction 
 //a3 is the destination register
 //rd1 and rd2 are the two outputs
-module regfile (input clk,
-input we3, rst,
-input [4:0] a1, a2, wa3,
-input [31:0] wd3,
-output [31:0] rd1, rd2);
+module regfile(input clk,
+               input we3, rst,
+               input [4:0] a1, a2, wa3,
+               input [31:0] wd3,
+               output [31:0] rd1, rd2);
 
     reg [31:0] rf[31:0];
     always @ (negedge clk)
@@ -209,7 +201,7 @@ endmodule
 
 
 //This module shift input signal two bits to the left
-// which is how we implement PC? = PC + 4 + SignImm × 4 in beq
+// which is how we implement PC? = PC + 4 + SignImm Ã 4 in beq
 module sl2 (input [31:0] a,
 output [31:0] y);
 // shift left by 2
