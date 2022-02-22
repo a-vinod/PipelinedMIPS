@@ -14,7 +14,7 @@ wire [31:0] pcF_;
 wire [511:0] instr_memory_RD;
 wire         instr_memory_ready;
 
-branch_predict_local bp_local(clk, reset, pcsrcD, stallF, pcF, pcbranchD, pcF_pred, predict_taken);
+branch_predict_global bp_global(clk, reset, pcsrcD, stallF, pcF, pcbranchD, pcF_pred, predict_taken);
 i_cache icache(clk, reset, pcF, pcsrcD, jumpD, branchD, instr_memory_RD, instr_memory_ready, hit, instrF); //Instruction cache
 imem imem(clk, reset, pcF, pcsrcD, jumpD, branchD, hit, instr_memory_ready, instr_memory_RD); //Instruction memory
 adder pcadd1(pcF, 32'b100, pcplus4F); //PC + 4
