@@ -3,7 +3,7 @@
 
 module hazard(
     input [1:0] branchD,
-	input jumpD, pcsrcD,
+		input jumpD, pcsrcD, predict_takenD,
     input [3:0] wbsrcE, wbsrcM,
     input regwriteE, regwriteM, regwriteW, hitM, hitF,
     input multstartE, pve,
@@ -13,7 +13,7 @@ module hazard(
     output [1:0] forwardAE, forwardBE
 );
     forward fw(rtD, rsD, rsE, rtE, writeregE, writeregW, writeregM,regwriteE, regwriteM, regwriteW,forwardAD, forwardBD,forwardAE, forwardBE);
-    stall st(branchD, jumpD, pcsrcD, wbsrcE, wbsrcM,regwriteE, regwriteM, regwriteW,hitM, hitF, rtD, rsD, rsE, rtE, writeregE, writeregW, writeregM,multstartE, pve, stallF, stallD, flushE, stallE, stallM, stallW);
+    stall st(branchD, jumpD, pcsrcD, predict_takenD, wbsrcE, wbsrcM,regwriteE, regwriteM, regwriteW,hitM, hitF, rtD, rsD, rsE, rtE, writeregE, writeregW, writeregM,multstartE, pve, stallF, stallD, flushE, stallE, stallM, stallW);
 
 endmodule
 
@@ -55,7 +55,7 @@ endmodule
 
 module stall(
     input [1:0] branchD,
-	input jumpD, pcsrcD,
+		input jumpD, pcsrcD, predict_takenD,
     input [3:0] wbsrcE, wbsrcM,
     input regwriteE, regwriteM, regwriteW, hitM, hitF,
     input [4:0] rtD, rsD, rsE, rtE, writeregE, writeregW, writeregM,
@@ -71,9 +71,9 @@ begin
     stallF <= 0;
     stallD <= 0;
     flushE <= 0;
-	stallE <= 0;
-	stallM <= 0;
-	stallW <= 0;
+		stallE <= 0;
+		stallM <= 0;
+		stallW <= 0;
 
     if(((rsD == rtE) || (rtE == rtD)) && (wbsrcE == 4'b1111)) //lw
     begin
@@ -82,7 +82,7 @@ begin
         flushE <= 1;
     end
 
-    if(hitF && (branchD != 2'b00) && ((regwriteE && ((rsD == writeregE) || (rtD == writeregE))) || ((wbsrcM[1:0] == 2'b11) && ((rsD == writeregM) || (rtD == writeregM))))) //branch
+    if(hitF && (predict_takenD) && ((regwriteE && ((rsD == writeregE) || (rtD == writeregE))) || ((wbsrcM[1:0] == 2'b11) && ((rsD == writeregM) || (rtD == writeregM))))) //branch
     begin
         stallF <= 1;
         stallD <= 1;
@@ -93,12 +93,12 @@ begin
     begin
         stallF <= 1;
         stallD <= 1;
-		if(!hitM && wbsrcM[1:0] == 2'b11) begin // if there's a data memory load in memory stage
-			stallE <= 1;
-			stallM <= 1;
-			stallW <= 1;
-		end else
-		flushE <= 1;
+				if(!hitM && wbsrcM[1:0] == 2'b11) begin // if there's a data memory load in memory stage
+						stallE <= 1;
+						stallM <= 1;
+						stallW <= 1;
+				end else
+        		flushE <= 1;
         multplier <= 1;
     end
 
@@ -106,12 +106,12 @@ begin
     begin
         stallF <= 1;
         stallD <= 1;
-        if(!hitM && wbsrcM[1:0] == 2'b11) begin
-	        stallE <= 1;
-	        stallM <= 1;
-	        stallW <= 1;
-        end else
-		    flushE <= 1;
+				if(!hitM && wbsrcM[1:0] == 2'b11) begin
+						stallE <= 1;
+						stallM <= 1;
+						stallW <= 1;
+				end else
+        		flushE <= 1;
     end
 
     if((multplier == 1) && (pve == 1) && (multstartE != 1)) //end multplication
@@ -119,14 +119,14 @@ begin
         multplier <= 0;
     end
     
-	if((i_cache_stall || d_cache_stall) && !multstartE)
-	begin
-        stallF <= 1;
-        stallD <= 1;
-        stallE <= 1;
-        stallM <= 1;
-        stallW <= 1;
-	end
+		if((i_cache_stall || d_cache_stall) && !multstartE)
+		begin
+				stallF <= 1;
+      	stallD <= 1;
+				stallE <= 1;
+				stallM <= 1;
+				stallW <= 1;
+		end
 end
 endmodule
 
