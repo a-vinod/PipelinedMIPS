@@ -1,156 +1,150 @@
-module execute(input        clk, rst,
-               // DECODE STAGE
-               // Downstream control flags
-               input			  MultStartD, MultSgnD, RegWriteD, MemWriteD,
-                            RegDstD, jumpD,
-               input  [1:0] BranchD, ALUSrcD, 
-				 	  	 input  [3:0] MemtoRegD,
-               input  [2:0] ALUControlD,
-							 
-               // Data
-               input  [4:0]  RsD, RtD, RdD,
-               input  [31:0] rd1D, rd2D, SignImmD, 
-                             UnsignedImmD, PCPlus4D,
+module execute(input clk, rst, flushE, stallE,
+							 // Control signals
+							 input [3:0] MemtoRegD1, MemtoRegD2,
+							 input RegWriteD1, RegWriteD2,
+							 input MemWriteD1, MemWriteD2,
+							 input [2:0] alucontrolD1, alucontrolD2,
+							 input [1:0] alusrcD1, alusrcD2,
+							 input regdstD1, regdstD2,
+							 input jumpD1, jumpD2,
+							 input [2:0] forwardAE1, forwardBE1, forwardAE2, forwardBE2,
+							 output dependency,
+							 // Data
+							 input [31:0] RD11, RD12, RD21, RD22, signimmD1, unsignimmD1, signimmD2, unsignimmD2,
+							 input [4:0] RsD1, RtD1, RdD1, RsD2, RtD2, RdD2,
+							 input [31:0] aluoutM1, aluoutM2, resultW1, resultW2,
+							 input [31:0] PCPlus4F,
+							 // Output
+							 // Control Signals
+							 output [3:0] MemtoRegE1, MemtoRegE2,
+							 output RegWriteE1, RegWriteE2,
+							 output MemWriteE1, MemWriteE2,
+							 output jumpE1, jumpE2,
+							 // Data
+							 output [4:0] RsE1, RtE1, RsE2, RtE2,
+							 output [31:0] aluoutE1, aluoutE2, 
+							 output [31:0] writedataE1, writedataE2, PCPlus4E,
+							 output [4:0] writeregE1, writeregE2);
+	
+	wire [31:0] srcA1, srcB1, srcB1_, srcA2, srcB2, srcB2_;
 
-               // MEMORY STAGE
-               // Downstream control flags
-               output        jumpE, RegWriteE, MemWriteE,
-               output [3:0]  MemtoRegE,
-               output [4:0]  WriteRegE,
-               // Fordwarding
-               input  [31:0] ALUOutM,
-               // Data
-               output [31:0] ALUMultOutE, WriteDataE, PCPlus4E,
+	reg [3:0] MemtoRegD1_, MemtoRegD2_;
+	reg RegWriteD1_, RegWriteD2_;
+	reg MemWriteD1_, MemWriteD2_;
+	reg [2:0] alucontrolD1_, alucontrolD2_;
+	reg [1:0] alusrcD1_, alusrcD2_;
+	reg regdstD1_, regdstD2_;
+	reg jumpD1_, jumpD2_;
 
-               // WRITEBACK STAGE
-               // Forwarding
-               input  [31:0] ResultW,
+	reg [31:0] RD11_, RD12_, RD21_, RD22_, signimmD1_, unsignimmD1_, signimmD2_, unsignimmD2_;
+	reg [31:0] RsD1_, RtD1_, RdD1_, RsD2_, RtD2_, RdD2_;
 
-               // HAZARD UNIT
-               input         FlushE, StallE,
-               input  [1:0]  ForwardAE, ForwardBE,
-               output        MultStartE, MultDoneE,
-               output [4:0]  RsE, RtE, RdE);
+	reg [31:0] PCPlus4F_;
 
-    // Pipeline registers updated on rising edge
-    reg        jumpE_, RegWriteE_, MemWriteE_, RegDstE_, MultStartE_, MultSgnE_;
-  	reg [1:0]  ALUSrcE_; 
-    reg [2:0]  ALUControlE_;
-		reg [3:0]  MemtoRegE_;
-    reg [4:0]  RsE_, RtE_, RdE_;
-    reg [31:0] rd1E_, rd2E_, UnsignedImmE_, SignImmE_, PCPlus4E_; 
+	assign srcA1  = forwardAE1[2] ? resultW2 : (forwardAE1[1] ? (forwardAE1[0] ? aluoutM2 : aluoutM1)	: (forwardAE1[0] ? resultW1 	 : RD11_));
+	assign srcB1_ = forwardBE1[2] ? resultW2 : (forwardBE1[1] ? (forwardBE1[0] ? aluoutM2 : aluoutM1)	: (forwardBE1[0] ? resultW1 	 : RD12_));
+	assign srcB1  = alusrcD1_[1]  ? (unsignimmD1_) : (alusrcD1_[0]  ? signimmD1_ : srcB1_);
 
-    // Downstream pipeline control flags
-    assign jumpE       = jumpE_;
-    assign RegWriteE   = RegWriteE_;
-    assign MemWriteE   = MemWriteE_;
-    assign MemtoRegE  = MemtoRegE_;
+	assign writedataE1 = srcB1_;
 
-    // Hazard Unit
-    assign RsE = RsE_;
-    assign RtE = RtE_;
-    assign RdE = RdE_;
-    assign PCPlus4E = PCPlus4E_;
+	assign srcA2  = forwardAE2[2] ? resultW1 : (forwardAE2[1] ? (forwardAE2[0] ? aluoutM1 : aluoutM2) : (forwardAE2[0] ? resultW2 : RD21_));
+	assign srcB2_ = forwardAE2[2] ? resultW1 : (forwardBE2[1] ? (forwardBE2[0] ? aluoutM1 : aluoutM2)	: (forwardBE2[0] ? resultW2 : RD22_));
+	assign srcB2  = alusrcD2_[1]  ? (unsignimmD2_) : (alusrcD2_[0]  ? signimmD2_ : srcB2_);
 
-    assign MultStartE = MultStartE_;
-		reg multiply_status;
-		reg [6:0] multiply_counter;
-    assign WriteRegE  = multiply_status ? 5'b0 : (RegDstE_     ? (RdE) : (RtE));
-  	assign WriteDataE = ForwardBE[1] ? (ALUOutM) : (ForwardBE[0] ? (ResultW) : (rd2E_));
+	assign writedataE2 = srcB2_;
+	wire zero1, zero2;
+	ALU alu1(srcA1, srcB1, alucontrolD1_, aluoutE1, zero1);
+	ALU alu2(srcA2, srcB2, alucontrolD2_, aluoutE2, zero2);
 
-    // SrcA and SrcB selection for ALU/multiplier
-  	wire [31:0] SrcAE, SrcBE, SrcBE_tmp, ALU_a, ALU_b, ALUOut;
-  	wire [31:0] ALU_a_mult, ALU_b_mult, multOutHi, multOutLo;
-    wire zero;
-		
-  	assign SrcAE     = ForwardAE[1] ? (ALUOutM)       : (ForwardAE[0] ? (ResultW)   : (rd1E_));
-  	assign SrcBE_tmp = ForwardBE[1] ? (ALUOutM)       : (ForwardBE[0] ? (ResultW)   : (rd2E_));
-  	assign SrcBE     = ALUSrcE_[1]  ? (UnsignedImmE_) : (ALUSrcE_[0]  ? (SignImmE_) : (SrcBE_tmp));
-		wire [2:0] ALU_Mult_Control;
-		
-    // MUX to select ALU inputs from multiplier or from register
-    assign ALU_a     = multiply_status   ? ALU_a_mult : SrcAE;
-    assign ALU_b     = multiply_status   ? ALU_b_mult : SrcBE;
-		// If ALU is being used for the mutiplier, we need to set control bits to make it add
-		assign ALU_Mult_Control = multiply_status ? 3'b010 : ALUControlE_;
-  	
+	assign writeregE1 = regdstD1_ ? RdD1_ : RtD1_;
+	assign writeregE2 = regdstD2_ ? RdD2_ : RtD2_;
 
-    // Instantiate and wire together ALU and multiplier
-  	ALU alu(.a(ALU_a), .b(ALU_b), .f(ALU_Mult_Control), .y(ALUOut), .zero(zero));
-    wire MultDoneE_;
+	assign RsE1 = RsD1_;
+	assign RtE1 = RtD1_;
+	assign RsE2 = RsD2_;
+	assign RtE2 = RtD2_;
 
-    multiplier m(.clk(clk),       .rst(rst),          .SrcAE(SrcAE),   
-                 .SrcBE(SrcBE),   .MultE(MultStartE), .MultSgn(MultSgnE_), .ALUOut(ALUOut), 
-                 .ALU_zero(zero), .ALU_A(ALU_a_mult), .ALU_B(ALU_b_mult), 
-                 .hi(multOutHi),  .lo(multOutLo),     .completed(MultDoneE_));
+	assign MemtoRegE1 = MemtoRegD1_;
+	assign MemtoRegE2 = MemtoRegD2_;
 
-    assign MultDoneE = MultDoneE_;
+	assign MemWriteE1 = MemWriteD1_;
+	assign MemWriteE2 = MemWriteD2_;
 
-  	assign ALUMultOutE = MemtoRegE_[3] ? (MemtoRegE_[2] ? ALUOut : multOutLo) : multOutHi;
+	assign RegWriteE1 = RegWriteD1_;
+	assign RegWriteE2 = RegWriteD2_;
 
-    always @ (posedge clk, posedge rst) begin
-        if (rst || (FlushE && !multiply_status)) begin
-            jumpE_        <= 1'b0;
-            RegWriteE_    <= 1'b0;
-            MemWriteE_    <= 2'b0;
-            RegDstE_      <= 1'b0;
-            MultStartE_   <= 1'b0;
-            MultSgnE_     <= 1'b0;
-            ALUSrcE_      <= 1'b0;
-            ALUControlE_  <= 3'b0;
-            RsE_          <= 5'b0;
-            RtE_          <= 5'b0;
-            RdE_          <= 5'b0;
-            rd1E_         <= 32'b0;
-            rd2E_         <= 32'b0;
-            UnsignedImmE_ <= 32'b0;
-            SignImmE_     <= 32'b0;
-            PCPlus4E_     <= 32'b0;
-            MemtoRegE_    <= 4'b1110;
-						multiply_status  <= 1'b0;
-						multiply_counter <= 6'b0;
-        end else if (!StallE && !multiply_status) begin
-            jumpE_        <= jumpD;
-            RegWriteE_    <= RegWriteD;
-            MemWriteE_    <= MemWriteD;
-            RegDstE_      <= RegDstD;
-            MultStartE_   <= MultStartD;
-            MultSgnE_     <= MultSgnD;
-            ALUSrcE_      <= ALUSrcD;
-            ALUControlE_  <= ALUControlD;
-            RsE_          <= RsD;
-            RtE_          <= RtD;
-            RdE_          <= RdD;
-            rd1E_         <= rd1D;
-            rd2E_         <= rd2D;
-            UnsignedImmE_ <= UnsignedImmD;
-            SignImmE_     <= SignImmD;
-            PCPlus4E_     <= PCPlus4D;
-            MemtoRegE_    <= MemtoRegD;
-						if (MultStartD)
-								multiply_status <= 1'b1;
-				end else if (multiply_status && (multiply_counter < 32)) begin
-            jumpE_        <= 1'b0;
-            RegWriteE_    <= 1'b0;
-            MemWriteE_    <= 2'b0;
-            RegDstE_      <= 1'b0;
-            MultStartE_   <= 1'b0;
-            MultSgnE_     <= 1'b0;
-            ALUSrcE_      <= 1'b0;
-            ALUControlE_  <= 3'b0;
-            RsE_          <= 5'b0;
-            RtE_          <= 5'b0;
-            RdE_          <= 5'b0;
-            rd1E_         <= 32'b0;
-            rd2E_         <= 32'b0;
-            UnsignedImmE_ <= 32'b0;
-            SignImmE_     <= 32'b0;
-            PCPlus4E_     <= 32'b0;
-            MemtoRegE_    <= 4'b1110;	
-						multiply_counter <= multiply_counter + 1;
-				end else if (multiply_status && (multiply_counter == 32)) begin
-						multiply_status <= 1'b0;
-						multiply_counter <= 1'b0;
-				end
-    end
+	assign jumpE1 = jumpD1_;
+	assign jumpE2 = jumpD2_;
+
+	assign PCPlus4E = PCPlus4F_;
+
+	// RAW or WAW
+	assign dependency = (((RsD2 == (regdstD1 ? RdD1 : RtD1)) || (RtD2 == (regdstD1 ? RdD1 : RtD1))) && RegWriteD1) || (RegWriteD1 && RegWriteD2 && ((regdstD1 ? RdD1 : RtD1) == (regdstD2 ? RdD2 : RtD2)));
+
+	always @ (posedge clk, posedge rst) begin
+		if (rst || flushE) begin
+			MemtoRegD1_ <= 0;
+			MemtoRegD2_ <= 0;
+			RegWriteD1_ <= 0;
+			RegWriteD2_ <= 0;
+			MemWriteD1_ <= 0;
+			MemWriteD2_ <= 0;
+			alucontrolD1_ <= 0;
+			alucontrolD2_ <= 0;
+			alusrcD1_ <= 0;
+			alusrcD2_ <= 0;
+			regdstD1_ <= 0;
+			regdstD2_ <= 0;
+			jumpD1_ <= 0;
+			jumpD2_ <= 0;
+
+			RD11_ <= 0;
+			RD12_ <= 0;
+			RD21_ <= 0;
+			RD22_ <= 0;
+			signimmD1_ <= 0;
+			unsignimmD1_ <= 0;
+			signimmD2_ <= 0;
+			unsignimmD2_ <= 0;
+			RsD1_ <= 0;
+			RtD1_ <= 0;
+			RdD1_ <= 0;
+			RsD2_ <= 0;
+			RtD2_ <= 0;
+			RdD2_ <= 0;
+			PCPlus4F_ <= 0;
+		end else if (!stallE) begin
+			MemtoRegD1_ <= MemtoRegD1;
+			MemtoRegD2_ <= MemtoRegD2;
+			RegWriteD1_ <= RegWriteD1;
+			RegWriteD2_ <= RegWriteD2;
+			MemWriteD1_ <= MemWriteD1;
+			MemWriteD2_ <= MemWriteD2;
+			alucontrolD1_ <= alucontrolD1;
+			alucontrolD2_ <= alucontrolD2;
+			alusrcD1_ <= alusrcD1;
+			alusrcD2_ <= alusrcD2;
+			regdstD1_ <= regdstD1;
+			regdstD2_ <= regdstD2;
+			jumpD1_ <= jumpD1;
+			jumpD2_ <= jumpD2;
+
+			RD11_ <= RD11;
+			RD12_ <= RD12;
+			RD21_ <= RD21;
+			RD22_ <= RD22;
+			signimmD1_ <= signimmD1;
+			unsignimmD1_ <= unsignimmD1;
+			signimmD2_ <= signimmD2;
+			unsignimmD2_ <= unsignimmD2;
+			RsD1_ <= RsD1;
+			RtD1_ <= RtD1;
+			RdD1_ <= RdD1;
+			RsD2_ <= RsD2;
+			RtD2_ <= RtD2;
+			RdD2_ <= RdD2;
+			PCPlus4F_ <= PCPlus4F;
+		end
+	end
+
 endmodule

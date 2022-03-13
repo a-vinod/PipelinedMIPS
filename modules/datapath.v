@@ -1,78 +1,133 @@
-module datapath(input             clk, rst, 
-                                  stallF,
-                output            hitF,
+module datapath(input clk, input rst,
+								input flushE,
+								input stallF, stallD, stallE, stallM, stallW,
+								input [1:0] forwardAD1, forwardBD1, forwardAD2, forwardBD2,
+								output pcsrcD1, pcsrcD2,
+								output [4:0] RsD1, RtD1, RsD2, RtD2,
+								output [1:0] predict_takenD,
+								output [4:0] RsE1, RtE1, RsE2, RtE2,
+								input [2:0] forwardAE1, forwardBE1, forwardAE2, forwardBE2,
+								output dependency, dependency_prev,
+								output RegWriteE1, RegWriteE2,
+								output [3:0] MemtoRegE1, MemtoRegE2,
+								output [4:0] writeregE1, writeregE2,
+								output RegWriteM1, RegWriteM2,
+								output [3:0] MemtoRegM1, MemtoRegM2,
+								output [4:0] writeregM1, writeregM2,
+								output regwriteW1, regwriteW2,
+								output [4:0] writeregW1, writeregW2,
+								output hitF, hitM,
+								output [1:0] branchD1, branchD2);
 
-                input             stallD,
-                input             forwardAD, forwardBD,
-                output  [1:0]  branchD,
-                output  [4:0]  RsD, RtD,
-								output 				 jumpd, pcsrcd, predict_takenD,
-                
-                input             flushE, stallE,
-                input      [1:0]  forwardAE, forwardBE,
-                output        RegWriteE, MultStartE, MultDoneE,
-                output  [3:0]  WBSrcE,
-                output  [4:0]  RsE, RtE, WriteRegE,
-                
-								input 				 stallM,
-                output         RegWriteM, hitM,
-                output  [3:0]  WBSrcM,
-                output  [4:0]  WriteRegM,
-                
-								input 				 stallW,
-                output         RegWriteW,
-                output  [4:0]  WriteRegW);
+	wire [31:0] PC, PCPlus4F, PCPlus4D, PCBranchPredict;
+	wire [31:0] pcbranchD1, pcbranchD2;
+	wire [31:0] instrF1, instrF2, instrD1, instrD2;
 
-    wire        pcsrcD, predict_takenF;
-		assign pcsrcd = pcsrcD;
-    wire [1:0]  branchD_;
-    wire [31:0] PC, InstrF, PCPlus4F, PC_pred, pcbranchD;
-    fetch f(clk, rst, stallF, pcsrcD, branchD_, jumpd, PC, pcbranchD, InstrF, PCPlus4F, PC_pred, hitF, predict_takenF);
+	wire [1:0] predict_takenF;
 
-    wire [4:0] writeregW;
-    wire [31:0] resultW, ALUMultOutM;
-    wire RegWriteW_;
-    wire [31:0] pcplus4D;
-  	wire [1:0] alusrcD;
-    wire [2:0] alucontrolD;
-		wire [3:0] WBSrcD;
-    wire [4:0] rsD, rtD, reD;
-    wire [31:0] signimmD, unsignimmD;
-    wire multstartD, multsgnD, regwriteD, memwriteD, regdstD, jumpD;
-    wire [31:0] rd1d, rd2d;
-    wire [27:0] jumpdstD;
-		assign jumpd = jumpD;
-    decode d(clk, rst, stallD, InstrF, PCPlus4F, forwardAD, forwardBD, writeregW, resultW, ALUMultOutM, RegWriteW_, pcplus4D, pcbranchD, branchD_, alusrcD, WBSrcD, alucontrolD, rsD, rtD, reD, signimmD, unsignimmD, multstartD, multsgnD, regwriteD, memwriteD, regdstD, jumpD, pcsrcD, misspredict, predict_takenF, predict_takenD, rd1d, rd2d, jumpdstD);
+	fetch f(clk, rst, stallF, pcsrcD1, pcsrcD2, 
+				 	branchD1, branchD2,
+					PC, pcbranchD1, pcbranchD2,
+					hitF, dependency, dependency_prev,
+					predict_takenF,
+					instrF1, instrF2, PCPlus4F, PCBranchPredict);
 
-    wire        jumpE, RegWriteE_, MemWriteE;
-    wire [3:0]  WBSrcE_;
-    wire [4:0]  WriteRegE_;
-    wire [31:0] ALUMultOutE, WriteDataE, PCPlus4E;
-  	wire [4:0]  RsE_, RtE_, RdE_;
-    wire MultStartE_, MultDoneE_;
-    execute e(clk, rst, multstartD, multsgnD, regwriteD, memwriteD, regdstD, jumpD, branchD_, alusrcD, WBSrcD, alucontrolD, rsD, rtD, reD, rd1d, rd2d, signimmD, unsignimmD, pcplus4D,  jumpE, RegWriteE_, MemWriteE, WBSrcE_, WriteRegE_, ALUMultOutM, ALUMultOutE, WriteDataE, PCPlus4E, resultW, flushE, stallE, forwardAE, forwardBE, MultStartE_, MultDoneE_, RsE_, RtE_, RdE_);
+	wire [31:0] resultW1, resultW2;
+	wire [31:0] aluoutM1, aluoutM2;
+	wire [3:0] memtoregD1, memtoregD2;
+	wire regwriteD1, regwriteD2;
+	wire memwriteD1, memwriteD2;
+	wire [2:0] alucontrolD1, alucontrolD2;
+	wire [1:0] alusrcD1, alusrcD2;
+	wire regdstD1, regdstD2;
+	wire jumpD1, jumpD2;
+	wire [31:0] RD11, RD12, RD21, RD22, signimmD1, unsignimmD1, signimmD2, unsignimmD2;
+	wire misspredict1, misspredict2;
+	wire [27:0] jumpdstD1, jumpdstD2;
+	wire [4:0] RdD1, RdD2;
 
-    wire        jumpM, RegWriteM_;
-    wire [3:0]  WBSrcM_;
-    wire [4:0]  WriteRegM_;
-    wire [31:0] ReadDataM, PCPlus8M;
-    memory m(clk, rst, stallM, jumpE, RegWriteE_, MemWriteE, WBSrcE_, WriteRegE_, ALUMultOutE, WriteDataE, PCPlus4E, jumpM, RegWriteM_, hitM, WBSrcM_, WriteRegM_, ALUMultOutM, ReadDataM, PCPlus8M);
+	decode d(clk, rst, stallD,
+					 predict_takenF,
+					 instrF1, instrF2, PCPlus4F,
+					 forwardAD1, forwardBD1, forwardAD2, forwardBD2,
+					 dependency, dependency_prev,
+					 regwriteW1, regwriteW2,
+					 writeregW1, writeregW2,
+					 resultW1, resultW2,
+					 aluoutM1, aluoutM2,
+					 memtoregD1, memtoregD2,
+					 RegWriteD1, RegWriteD2,
+					 MemWriteD1, MemWriteD2,
+					 branchD1, branchD2,
+					 alucontrolD1, alucontrolD2,
+					 alusrcD1, alusrcD2,
+					 regdstD1, regdstD2,
+				 	 jumpD1, jumpD2,
+					 RD11, RD12, RD21, RD22, signimmD1, unsignimmD1, signimmD2, unsignimmD2,
+					 RsD1, RtD1, RdD1, RsD2, RtD2, RdD2, 
+					 pcbranchD1, pcbranchD2, PCPlus4D,
+				 	 pcsrcD1, pcsrcD2, misspredict1, misspredict2,
+				 	 predict_takenD,
+					 jumpdstD1, jumpdstD2);
 
+	wire MemWriteE1, MemWriteE2;
+	wire jumpE1, jumpE2;
+	wire [31:0] aluoutE1, aluoutE2;
+	wire [31:0] writedataE1, writedataE2, PCPlus4E;
 
-    writeback w(clk, rst, stallW, jumpM, RegWriteM_, WBSrcM_, WriteRegM_, ReadDataM, ALUMultOutM, PCPlus8M, pcsrcD, jumpD, predict_takenF, predict_takenD, misspredict, branchD, jumpdstD, PCPlus4F, pcplus4D, pcbranchD, PC_pred, RegWriteW_, writeregW, resultW, PC);
+	execute e(clk, rst, flushE, stallE,
+						memtoregD1, memtoregD2,
+						RegWriteD1, RegWriteD2,
+						MemWriteD1, MemWriteD2,
+						alucontrolD1, alucontrolD2,
+						alusrcD1, alusrcD2,
+						regdstD1, regdstD2,
+						jumpD1, jumpD2,
+						forwardAE1, forwardBE1, forwardAE2, forwardBE2,
+						dependency,
+						RD11, RD12, RD21, RD22, signimmD1, unsignimmD1, signimmD2, unsignimmD2,
+						RsD1, RtD1, RdD1, RsD2, RtD2, RdD2,
+						aluoutM1, aluoutM2, resultW1, resultW2,
+						PCPlus4F,
+						MemtoRegE1, MemtoRegE2,
+						RegWriteE1, RegWriteE2,
+						MemWriteE1, MemWriteE2,
+						jumpE1, jumpE2,
+						RsE1, RtE1, RsE2, RtE2,
+						aluoutE1, aluoutE2, 
+						writedataE1, writedataE2, PCPlus4E,
+						writeregE1, writeregE2);
 
-    assign {MultStartE, MultDoneE} = {MultStartE_, MultDoneE_};
-    assign branchD    = branchD_;
-    assign {RsD, RtD} = {rsD, rtD};
-    assign WBSrcE     = WBSrcE_;
-    assign RegWriteE  = RegWriteE_;
-    assign WriteRegE  = WriteRegE_;
-  	assign {RsE, RtE} = {RsE_, RtE_};
-    assign WBSrcM     = WBSrcM_;
-    assign RegWriteM  = RegWriteM_;
-    assign WriteRegM  = WriteRegM_;
-    assign RegWriteW  = RegWriteW_;
-    assign WriteRegW  = writeregW;
+	wire jumpM1, jumpM2;
+	wire[31:0] ReadDataM1, ReadDataM2, PCPlus8M;
 
+	memory m(clk, rst, stallM,
+					 MemtoRegE1, MemtoRegE2,
+					 RegWriteE1, RegWriteE2,
+					 MemWriteE1, MemWriteE2,
+					 jumpE1, jumpE2,
+					 aluoutE1, aluoutE2,
+					 writedataE1, writedataE2, PCPlus4E,
+					 writeregE1, writeregE2,
+					 MemtoRegM1, MemtoRegM2,
+					 RegWriteM1, RegWriteM2,
+					 jumpM1, jumpM2,
+					 ReadDataM1, ReadDataM2, aluoutM1, aluoutM2, PCPlus8M,
+					 writeregM1, writeregM2,
+					 hitM);
+	
+	writeback w(clk, rst, stallW,
+							MemtoRegM1, MemtoRegM2,
+							RegWriteM1, RegWriteM2,
+							jumpM1, jumpM2,
+							ReadDataM1, ReadDataM2, aluoutM1, aluoutM2, PCPlus8M,
+							writeregM1, writeregM2,
+							regwriteW1, regwriteW2,
+							resultW1, resultW2,
+							writeregW1, writeregW2,
+							jumpD1, jumpD2, pcsrcD1, pcsrcD2,
+							predict_takenF, predict_takenD,
+							jumpdstD1, jumpdstD2,
+							PCPlus4F, PCPlus4D, pcbranchD1, pcbranchD2, PCBranchPredict,
+							PC);
 endmodule
-

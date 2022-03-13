@@ -1,194 +1,134 @@
-//Stage Decode
+module decode(input clk, reset, stallD,
+							input [1:0] predict_takenF,
+							input [31:0] instrF1, instrF2, PCPlus4F,
+							input [1:0] forwardAD1, forwardBD1, forwardAD2, forwardBD2,
+							input dependency,
+							output dependency_prev,
+							input regwriteW1, regwriteW2,
+							input [4:0] writeregW1, writeregW2,
+							input [31:0] resultW1, resultW2,
+							input [31:0] aluoutM1, aluoutM2,
+							// Control Signals
+							output [3:0] MemtoRegD1, MemtoRegD2,
+							output RegWriteD1, RegWriteD2,
+							output MemWriteD1, MemWriteD2,
+							output [1:0] branchD1, branchD2,
+							output [2:0] alucontrolD1, alucontrolD2,
+							output [1:0] alusrcD1, alusrcD2,
+							output regdstD1, regdstD2,
+							output jumpD1, jumpD2,
+							// Data Outputs 
+							output [31:0] RD11, RD12, RD21, RD22, signimmD1, unsignimmD1, signimmD2, unsignimmD2,
+							output [4:0] RsD1, RtD1, RdD1, RsD2, RtD2, RdD2,
+							output [31:0] pcbranchD1, pcbranchD2, pcplus4D,
+							output pcsrcD1, pcsrcD2, misspredict1, misspredict2,
+							output [1:0] predict_takenD,
+							output [27:0] jumpdstD1, jumpdstD2);
+							
+	reg [31:0] instrD1, instrD2, pcplus4D_;
 
-module decode(
-input clk, reset, stallD,
-input [31:0] instrF, pcplus4F,
-input forwardAD, forwardBD,
-input [4:0] writeregW,
-input [31:0] resultW, aluoutM,
-input regwriteW,
-output [31:0] pcplus4D, pcbranchD,
-output [1:0] branchD, alusrcD,
-output [3:0] wbsrcD,
-output [2:0] alucontrolD,
-output [4:0] rsD, rtD, reD,
-output [31:0] signimmD, unsignimmD,
-output multstartD, multsgnD, regwriteD, memwriteD, regdstD, jumpD,
-output pcsrcD, misspredict, predict_takenF, predict_takenD,
-output [31:0] rd1d, rd2d,
-output [27:0] jumpdstD
-);
+	controller c1(instrD1[31:26], instrD1[5:0],
+		       multstartD, multsgnD,
+		       branchD1, MemtoRegD1, MemWriteD1,
+		       alusrcD1, regdstD1, RegWriteD1, jumpD1,
+		       alucontrolD1);
+	controller c2(instrD2[31:26], instrD2[5:0],
+		       multstartD, multsgnD,
+		       branchD2, MemtoRegD2, MemWriteD2,
+		       alusrcD2, regdstD2, RegWriteD2, jumpD2,
+		       alucontrolD2);
 
-reg [31:0] instrD, pcplus4D_;
-wire [1:0] clear; //0 for branch, 1 for jal
-assign clear[1] = jumpD;
-assign clear[0] = branchD[0] | branchD[1];
-// fdgate fdg(clk, reset, stallD, clear, instrF, pcplus4F, instrD, pcplus4D);//the gate 
+	//Register File
+	wire [31:0] rd11, rd12, rd21, rd22;
+	regfile rf(clk, reset, regwriteW1, regwriteW2, instrD1[25:21], instrD1[20:16], writeregW1, resultW1, instrD2[25:21], instrD2[20:16], writeregW2, resultW2, rd11, rd12, rd21, rd22);
 
-controller c(instrD[31:26], instrD[5:0],
-               multstartD, multsgnD,
-               branchD, wbsrcD, memwriteD,
-               alusrcD, regdstD, regwriteD, jumpD,
-               alucontrolD);
+	//rsD, rtD, reD
+	assign RsD1 = instrD1[25:21];
+	assign RtD1 = instrD1[20:16];
+	assign RdD1 = instrD1[15:11];
+	assign RsD2 = instrD2[25:21];
+	assign RtD2 = instrD2[20:16];
+	assign RdD2 = instrD2[15:11];
 
-//Register File
-wire [31:0] rd1, rd2;
-regfile rf(clk, regwriteW, reset, instrD[25:21], instrD[20:16], writeregW, resultW, rd1, rd2);
 
-//rsD, rtD, reD
-assign rsD = instrD[25:21];
-assign rtD = instrD[20:16];
-assign reD = instrD[15:11];
+	//extension
+	signext se1(instrD1[15:0], signimmD1);
+	signext se2(instrD2[15:0], signimmD2);
+	unsignext tuse1(instrD1[15:0], unsignimmD1);
+	unsignext tuse2(instrD2[15:0], unsignimmD2);
 
-//extension
-signext se(instrD[15:0], signimmD);
-unsignext tuse(instrD[15:0], unsignimmD);
+	//branch
+	wire [31:0] shiftedsignimm1, shiftedsignimm2;
+	sl2 immsh1(signimmD1, shiftedsignimm1);
+	adderD pcaddD1(pcplus4D_, shiftedsignimm1, pcbranchD1);
+	sl2 immsh2(signimmD2, shiftedsignimm2);
+	adderD pcaddD2(pcplus4D_, shiftedsignimm2, pcbranchD2);
 
-//brench
-wire [31:0] shiftedsignimm;
-sl2 immsh(signimmD, shiftedsignimm);
-adderD pcaddD(pcplus4D_, shiftedsignimm, pcbranchD);//PC p addressing
+	//branch early decision
+	assign RD11 = forwardAD1[1] ? aluoutM2 : (forwardAD1[0] ? aluoutM1 : rd11);
+	assign RD12 = forwardBD1[1] ? aluoutM2 : (forwardBD1[0] ? aluoutM1 : rd12);
+	assign RD21 = forwardAD2[1] ? aluoutM1 : (forwardAD2[0] ? aluoutM2 : rd21);
+	assign RD22 = forwardBD2[1] ? aluoutM1 : (forwardBD2[0] ? aluoutM2 : rd22);
 
-//brench early decision
-mux2 #(32) mux1D(rd1, aluoutM, forwardAD, rd1d);
-mux2 #(32) mux2D(rd2, aluoutM, forwardBD, rd2d);
-branchComparison bc(rd1d,rd2d,branchD,pcsrcD);//branch comparasion
+	wire pcsrcD1_, pcsrcD2_;
+	branchComparison bc1(RD11,RD12,branchD1,pcsrcD1_);//branch comparasion
+	branchComparison bc2(RD21,RD22,branchD2,pcsrcD2_);
+	assign pcsrcD1 = dependency ? 0 : pcsrcD1_;
+	assign pcsrcD2 = dependency ? 0 : pcsrcD2_;
 
-//j type address
-assign jumpdstD = instrD[25:0] << 2;
-assign pcplus4D = pcplus4D_;
-reg stall_and_flush;
+	//j type address
+	assign jumpdstD1 = instrD1[25:0] << 2;
+	assign jumpdstD2 = instrD2[25:0] << 2;
+	assign pcplus4D = pcplus4D_;
 
-reg predict_takenD_;
-assign predict_takenD = predict_takenD_;
-assign misspredict = (!predict_takenD && pcsrcD) || (predict_takenD && !pcsrcD);
+	reg [1:0] predict_takenD_;
+	assign predict_takenD = predict_takenD_;
 
-always @ (posedge clk, posedge reset) begin 
-		if (reset || ((misspredict || jumpD) && !stallD)) begin
-				instrD <= 32'b0;
-				pcplus4D_ <= 32'b0;
-				predict_takenD_ <= 0;
-		end else if (!stallD) begin
-				instrD <= instrF;
-				pcplus4D_ <= pcplus4F;
-				predict_takenD_ <= predict_takenF;
-		end
-end
+	assign misspredict1 = (!predict_takenD[0] && pcsrcD1) || (predict_takenD[0] && !pcsrcD1);
+	assign misspredict2 = (!predict_takenD[1] && pcsrcD2) || (predict_takenD[1] && !pcsrcD2);
+	assign misspredict  = misspredict2 || misspredict1;
+
+	reg dependency_prev_;
+	assign dependency_prev = dependency_prev_;
+	reg [31:0] instrF1_prev, instrF2_prev;
+
+	always @ (posedge clk, posedge reset) begin 
+			if (reset || ((jumpD1 || jumpD2 || misspredict) && !stallD)) begin
+					if (reset || jumpD1 || misspredict) begin
+						instrD1 <= 32'b0;
+						instrD2 <= 32'b0;
+					end else if (jumpD2)
+						instrD2 <= 32'b0;
+
+					pcplus4D_ <= 32'b0;
+					predict_takenD_ <= 2'b00;
+					dependency_prev_ <= 0;
+					instrF1_prev <= 32'b0;
+					instrF2_prev <= 32'b0;
+			end else if (!stallD) begin
+					dependency_prev_ <= dependency;
+
+					if (dependency) begin
+						instrD1 <= instrF1_prev;
+						instrD2 <= 32'b0;
+					end else begin
+						predict_takenD_ <= predict_takenF;
+						pcplus4D_ <= PCPlus4F;
+						if (dependency_prev_) begin
+							instrD1 <= 32'b0;
+							instrD2 <= instrF2_prev;
+						end else begin
+							instrD1 <= instrF1;
+							instrD2 <= instrF2;
+							instrF1_prev <= instrF1;
+							instrF2_prev <= instrF2;
+						end
+					end
+			end
+	end
 
 endmodule
 
-
-module fdgate(  //pipeline gate between F and D
-input clk, rst, stallD,
-input [1:0] clear,
-input [31:0] instrF, pcplus4F,
-output reg [31:0] instrD, pcplus4D
-);
-
-reg [31:0] stall_instr, stall_pcplus4D;
-
-always @ (posedge clk, posedge rst, posedge clear)
-    begin
-        if(clear!=2'b00 || rst)
-            begin
-              instrD <= 0;
-              pcplus4D <= 0;
-            end 
-        else if(!stallD)
-            begin
-              instrD <= instrF;
-              pcplus4D <= pcplus4F;
-              stall_instr <= instrF;
-              stall_pcplus4D <= pcplus4F;
-            end
-        else if (stallD)
-            begin
-              instrD <= stall_instr;
-              pcplus4D <= stall_pcplus4D;
-            end
-    end
-
-endmodule
-
-
-
-module controller(input   [5:0] opD, functD,
-                  output        multstartD, multsgnD,
-                  output  [1:0] branchD,
-                  output  [3:0] wbsrcD,  //Chooses source of the Register File writeback (e.g. data memory, ALU, PC, product registers).
-                  output        memwriteD,
-                  output  [1:0] alusrcD, //00 for R-type, 01 for I-type, 10 for unsigned ext
-                  output        regdstD, regwriteD,
-                  output        jumpD,
-                  output  [2:0] alucontrolD);
-
-reg [16:0] controls;
-
-assign {regwriteD, wbsrcD, memwriteD, alucontrolD, alusrcD, regdstD, branchD, jumpD, multstartD, multsgnD} = controls;
-always@(*)
-//add, addi, sub, and, or, xor, xnor, andi, ori, xori, slt, slti, lw, sw, lui, jal, bne, beq, mult, multu, mflo, mfhi.
-begin
-    if(opD==6'b000000) //R-type
-        begin
-            case(functD)
-                6'b000000: controls <= 17'b00000000000000000; //nop
-                6'b100000: controls <= 17'b11110001000100000; //add
-                6'b100010: controls <= 17'b11110010100100000; //subtract
-                6'b100100: controls <= 17'b11110000000100000; //and
-                6'b100101: controls <= 17'b11110000100100000; //or
-                6'b100110: controls <= 17'b11110001100100000; //xor
-                6'b100111: controls <= 17'b11110010000100000; //xnor
-                6'b101010: controls <= 17'b11110011000100000; //slt
-                6'b011000: controls <= 17'b01110000000000011; //mult
-                6'b011001: controls <= 17'b01110000000000010; //multu
-                6'b010010: controls <= 17'b11010000000100000; //mflo
-                6'b010000: controls <= 17'b10110000000100000; //mfhi
-            endcase
-        end
-    else
-        begin
-            case(opD) 
-                6'b001000: controls <= 17'b11110001001000000; //addi
-                6'b001100: controls <= 17'b11110000010000000; //andi
-                6'b001101: controls <= 17'b11110000110000000; //ori
-                6'b001110: controls <= 17'b11110001110000000; //xori
-                6'b001010: controls <= 17'b11110011001000000; //slti
-                6'b100011: controls <= 17'b11111001001000000; //lw
-                6'b101011: controls <= 17'b01110101001000000; //sw
-                6'b001111: controls <= 17'b11110011101000000; //lui
-                6'b000011: controls <= 17'b10000000000000100; //jal
-                6'b000101: controls <= 17'b01110011000010000; //bne
-                6'b000100: controls <= 17'b01110011000001000; //beq
-                default: controls <= 17'bxxxxxxxxxxxxxxxx; //default
-            endcase
-        end    
-end
-endmodule
-
-
-//This is the regfile that keeps track of the registers
-//a1 is the  read port
-//a2 is the bits of the instruction 
-//a3 is the destination register
-//rd1 and rd2 are the two outputs
-module regfile (input clk,
-input we3, rst,
-input [4:0] a1, a2, wa3,
-input [31:0] wd3,
-output [31:0] rd1, rd2);
-
-    reg [31:0] rf[31:0];
-    always @ (negedge clk)
-        if (we3==1 && wa3 != 0) 
-            rf[wa3] <= wd3;
-
-    assign rd1 = (a1 != 0) ? rf[a1] : 0;
-    assign rd2 = (a2 != 0) ? rf[a2] : 0;
-endmodule
-
-
-//this module extend the 16bits input to 32 bits
-// which is used in lw instruction.
 module signext (input [15:0] a, //signExtension
 output [31:0] y);
     assign y = {{16{a[15]}}, a};
@@ -220,31 +160,19 @@ endmodule
 
 
 module branchComparison (  //branch comparasion
-input [31:0] SRCA, SRCB,
-input [1:0] OP,
-output reg COMP
-);
+	input [31:0] SRCA, SRCB,
+	input [1:0] OP,
+	output reg COMP
+	);
 
-always@(*)
-begin
-  if(OP == 2'b10 && SRCA != SRCB) //bne
-    COMP <= 1;
-  else if(OP == 2'b01 &&  SRCA == SRCB)//beq
-    COMP <= 1;
-  else
-    COMP <= 0;
-end
+	always@(*)
+	begin
+		if(OP == 2'b10 && SRCA != SRCB) //bne
+		  COMP <= 1;
+		else if(OP == 2'b01 &&  SRCA == SRCB)//beq
+		  COMP <= 1;
+		else
+		  COMP <= 0;
+	end
 
 endmodule
-
-
-//This 2:1 mux implement all the muxs in the design
-/*
-module mux2 # (parameter WIDTH = 8) //2:1MUX
-(input [WIDTH-1:0] d0, d1,
-input s,
-output [WIDTH-1:0] y);
-    assign y = s ? d1 : d0;
-endmodule
-*/
-

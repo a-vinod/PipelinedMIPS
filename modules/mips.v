@@ -1,25 +1,63 @@
 module mips(input clk, rst);
-    wire stallF, hitF;
 
-    wire        stallD, jumpD, pcsrcD, predict_takenD;
-    wire        forwardAD, forwardBD;
-    wire [1:0]  branchD;
-    wire [4:0]  RsD, RtD;
-    
-    wire        flushE, stallE;
-    wire [1:0]  forwardAE, forwardBE;
-    wire        RegWriteE, MultStartE, MultDoneE;
-    wire [3:0]  WBSrcE;
-    wire [4:0]  RsE, RtE, WriteRegE;
-    
-    wire        RegWriteM, hitM, stallM;
-    wire [3:0]  WBSrcM;
-    wire [4:0]  WriteRegM;
+	wire flushE;
+	wire stallF, stallD, stallE, stallM, stallW;
+	wire [1:0] forwardAD1, forwardBD1, forwardAD2, forwardBD2;
+	wire [1:0] predict_takenD;
+	wire pcsrcD1, pcsrcD2;
+	wire [4:0] RsD1, RtD1, RsD2, RtD2;
+	wire [4:0] RsE1, RtE1, RsE2, RtE2;
+	wire [2:0] forwardAE1, forwardBE1, forwardAE2, forwardBE2;
+	wire RegWriteE1, RegWriteE2;
+	wire [3:0] MemtoRegE1, MemtoRegE2;
+	wire [4:0] writeregE1, writeregE2;
+	wire RegWriteM1, RegWriteM2;
+	wire [3:0] MemtoRegM1, MemtoRegM2;
+	wire [4:0] writeregM1, writeregM2;
+	wire regwriteW1, regwriteW2;
+	wire [4:0] writeregW1, writeregW2;
+	wire hitF, hitM;
+	wire [1:0] branchD1, branchD2;
+	wire dependency, dependency_prev;
 
-    wire        RegWriteW, stallW;
-    wire [4:0]  WriteRegW;
-    datapath dp(clk, rst, stallF, hitF, stallD, forwardAD, forwardBD, branchD, RsD, RtD, jumpD, pcsrcD, predict_takenD, flushE, stallE, forwardAE, forwardBE, RegWriteE, MultStartE, MultDoneE, WBSrcE, RsE, RtE, WriteRegE, stallM, RegWriteM, hitM, WBSrcM, WriteRegM, stallW, RegWriteW, WriteRegW);
+	hazard hz(pcsrcD1, pcsrcD2,
+	branchD1, branchD2,
+	RsD1, RtD1, RsD2, RtD2,
+	predict_takenD,
+	RsE1, RtE1, RsE2, RtE2,
+	RegWriteE1, RegWriteE2,
+	MemtoRegE1, MemtoRegE2,
+	writeregE1, writeregE2,
+	RegWriteM1, RegWriteM2,
+	MemtoRegM1, MemtoRegM2,
+	writeregM1, writeregM2,
+	regwriteW1, regwriteW2,
+	writeregW1, writeregW2,
+	hitF, hitM,
+	dependency, dependency_prev,
+	flushE,
+	stallF, stallD, stallE, stallM, stallW,
+	forwardAD1, forwardBD1, forwardAD2, forwardBD2,
+	forwardAE1, forwardBE1, forwardAE2, forwardBE2);
 
-    hazard hz(branchD, jumpD, pcsrcD, predict_takenD, WBSrcE, WBSrcM, RegWriteE, RegWriteM, RegWriteW, hitM, hitF, MultStartE, MultDoneE, RtD, RsD, RsE, RtE, WriteRegE, WriteRegW, WriteRegM, stallF, stallD, flushE, stallE, stallM, stallW, forwardAD, forwardBD, forwardAE, forwardBE);
+	datapath dp( clk,  rst,
+								 flushE,
+								 stallF, stallD, stallE, stallM, stallW,
+								 forwardAD1, forwardBD1, forwardAD2, forwardBD2,
+								 pcsrcD1, pcsrcD2,
+								 RsD1, RtD1, RsD2, RtD2,
+								 predict_takenD,
+								 RsE1, RtE1, RsE2, RtE2,
+								 forwardAE1, forwardBE1, forwardAE2, forwardBE2,
+								 dependency, dependency_prev,
+								 RegWriteE1, RegWriteE2,
+								 MemtoRegE1, MemtoRegE2,
+								 writeregE1, writeregE2,
+								 RegWriteM1, RegWriteM2,
+								 MemtoRegM1, MemtoRegM2,
+								 writeregM1, writeregM2,
+								 regwriteW1, regwriteW2,
+								 writeregW1, writeregW2,
+								 hitF, hitM,
+								 branchD1, branchD2);
 endmodule
-

@@ -1,12 +1,10 @@
 
 module i_cache(input    	  clk, rst,
                input  [31:0]  A,
-               input          pcsrcD, jumpD,
-        	   input  [1:0]   branchD,
-               input  [511:0] WM, // 4 words per block read from cache
+               input  [511:0] WM,
                input 	 	  READY,
                output		  cache_hit,
-               output [31:0]  RD);
+               output [31:0]  RD1, RD2);
 	reg [1064:0] cache[0:127];
   	// Useful Indices:
   	// cache[][511:0]       : data_0
@@ -75,14 +73,22 @@ module i_cache(input    	  clk, rst,
 
     assign hit_0 = (cache_row[530:512] == A[31:13]) && cache_row[531];
     assign hit_1 = (cache_row[1062:1044] == A[31:13]) && cache_row[1063];
-    assign hit   = hit_0 | hit_1;
-	assign cache_hit = hit;
+    assign hit   = hit_0 || hit_1;
+		assign cache_hit = hit;
 
-    wire [31:0] data_0, data_1;
+    wire [31:0] data1_0, data1_1, data2_0, data2_1;
 
-    MUX_4b m1(cache[A[12:6]][31:0], cache[A[12:6]][63:32], cache[A[12:6]][95:64], cache[A[12:6]][127:96], cache[A[12:6]][159:128], cache[A[12:6]][191:160], cache[A[12:6]][223:192], cache[A[12:6]][255:224], cache[A[12:6]][287:256], cache[A[12:6]][319:288], cache[A[12:6]][351:320], cache[A[12:6]][383:352], cache[A[12:6]][415:384], cache[A[12:6]][447:416], cache[A[12:6]][479:448], cache[A[12:6]][511:480], A[5:2], data_0);
-    MUX_4b m2(cache[A[12:6]][563:532], cache[A[12:6]][595:564], cache[A[12:6]][627:596], cache[A[12:6]][659:628], cache[A[12:6]][691:660], cache[A[12:6]][723:692], cache[A[12:6]][755:724], cache[A[12:6]][787:756], cache[A[12:6]][819:788], cache[A[12:6]][851:820], cache[A[12:6]][883:852], cache[A[12:6]][915:884], cache[A[12:6]][947:916], cache[A[12:6]][979:948], cache[A[12:6]][1011:980], cache[A[12:6]][1043:1012], A[5:2], data_1);
-  	assign RD = hit_1 ? data_1 : data_0;
+    MUX_4b m1(cache[A[12:6]][31:0], cache[A[12:6]][63:32], cache[A[12:6]][95:64], cache[A[12:6]][127:96], cache[A[12:6]][159:128], cache[A[12:6]][191:160], cache[A[12:6]][223:192], cache[A[12:6]][255:224], cache[A[12:6]][287:256], cache[A[12:6]][319:288], cache[A[12:6]][351:320], cache[A[12:6]][383:352], cache[A[12:6]][415:384], cache[A[12:6]][447:416], cache[A[12:6]][479:448], cache[A[12:6]][511:480], A[5:2], data1_0);
+    MUX_4b m2(cache[A[12:6]][563:532], cache[A[12:6]][595:564], cache[A[12:6]][627:596], cache[A[12:6]][659:628], cache[A[12:6]][691:660], cache[A[12:6]][723:692], cache[A[12:6]][755:724], cache[A[12:6]][787:756], cache[A[12:6]][819:788], cache[A[12:6]][851:820], cache[A[12:6]][883:852], cache[A[12:6]][915:884], cache[A[12:6]][947:916], cache[A[12:6]][979:948], cache[A[12:6]][1011:980], cache[A[12:6]][1043:1012], A[5:2], data1_1);
+ 		
+		wire [31:0] Aplus4F;
+		assign Aplus4F = A + 4;
+
+		MUX_4b m3(cache[A[12:6]][31:0], cache[A[12:6]][63:32], cache[A[12:6]][95:64], cache[A[12:6]][127:96], cache[A[12:6]][159:128], cache[A[12:6]][191:160], cache[A[12:6]][223:192], cache[A[12:6]][255:224], cache[A[12:6]][287:256], cache[A[12:6]][319:288], cache[A[12:6]][351:320], cache[A[12:6]][383:352], cache[A[12:6]][415:384], cache[A[12:6]][447:416], cache[A[12:6]][479:448], cache[A[12:6]][511:480], Aplus4F[5:2], data2_0);
+    MUX_4b m4(cache[A[12:6]][563:532], cache[A[12:6]][595:564], cache[A[12:6]][627:596], cache[A[12:6]][659:628], cache[A[12:6]][691:660], cache[A[12:6]][723:692], cache[A[12:6]][755:724], cache[A[12:6]][787:756], cache[A[12:6]][819:788], cache[A[12:6]][851:820], cache[A[12:6]][883:852], cache[A[12:6]][915:884], cache[A[12:6]][947:916], cache[A[12:6]][979:948], cache[A[12:6]][1011:980], cache[A[12:6]][1043:1012], Aplus4F[5:2], data2_1);
+  	
+		assign RD1 = hit_1 ? data1_1 : data1_0;
+		assign RD2 = hit_1 ? data2_1 : data2_0;
   	
   	integer i;
 
@@ -94,22 +100,23 @@ module i_cache(input    	  clk, rst,
             // Cache miss: after 20 cycles, data fetched from memory is ready
             //             on the WM line and READY signal is high
             if (!hit && READY) begin // cache miss: read from memory
-              	if (cache[A[12:6]][1064]) begin     // LRU = 1
-                    cache[A[12:6]][1062:1044] <= A[31:13];  // Write to tag_1
+              	if (cache[A[12:6]][1064]) begin      // LRU = 1
+                    cache[A[12:6]][1062:1044] <= A[31:13]; // Write to tag_1
                     cache[A[12:6]][1043:532]  <= WM; // Write to data_1
-          		    cache[A[12:6]][1063]      <= 1;  // Update valid bit
-					cache[A[12:6]][1064]      <= 0;  // Update LRU
-                end else begin                     // LRU = 0
-                    cache[A[12:6]][530:512] <= A[31:13];  // Write to tag_0
+          		    	cache[A[12:6]][1063]      <= 1;  // Update valid bit
+										cache[A[12:6]][1064]      <= 0;  // Update LRU
+                end else begin                     	 // LRU = 0
+                    cache[A[12:6]][530:512] <= A[31:13];   // Write to tag_0
                     cache[A[12:6]][511:0]   <= WM; // Write to data_0
-              		cache[A[12:6]][531]     <= 1;  // Update valid bit
-					cache[A[12:6]][1064]    <= 1;  // Update LRU
+              			cache[A[12:6]][531]     <= 1;  // Update valid bit
+										cache[A[12:6]][1064]    <= 1;  // Update LRU
                 end
             end else if (hit) begin	// cache hit
-			    // Update LRU bit
-				cache[A[12:6]][1064] <= hit_1 ? 0 : 1;
-			end
+			    		// Update LRU bit
+							cache[A[12:6]][1064] <= hit_1 ? 0 : 1;
+						end
         end
   	end
 endmodule
+
 
