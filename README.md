@@ -18,7 +18,35 @@ Each implementation is dedicated its own branch in this repository. Namely:
 
 | Branch | Description |
 | --- | --- |
-| `data_instr_cache` | Most basic implementation of the five-stage processor with a data and instruction cache. |
-| `local_branch_predictor` | Uses a 2-bit local branch predictor. |
-| `global_branch_predictor` | Uses a 2-bit global branch predictor. |
-| `dual_issue` | A dual-issue superscalar five-stage processor. |
+| `data_instr_cache` | Most basic implementation of the five-stage processor with a data and instruction cache. On a cache miss, main memory accesses take 20 cycles.(See Proj. 2 Report) |
+| `local_branch_predictor` | Uses a 2-bit local branch predictor. (See Proj. 3 Report) |
+| `global_branch_predictor` | Uses a 2-bit global branch predictor. (See Proj. 3 Report)|
+| `dual_issue` | A dual-issue superscalar five-stage processor. (See Proj. 4 Report) |
+
+The following ISA is supported by these implementations: 
+
+- add
+- addi
+- sub
+- and
+- or
+- xor
+- xnor
+- andi
+- ori
+- xori
+- slt
+- slti
+- lw (20 cycles on cache miss)
+- sw
+- lui
+- jal
+- bne
+- beq
+
+The following instructions are supported by all the processors EXCEPT for the dual-issue superscalar:
+
+- mult (32 cycles)
+- multu (32 cycles)
+- mflo
+- mfhi
